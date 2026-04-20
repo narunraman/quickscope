@@ -1,0 +1,1628 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickScope Results Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="./data.js"></script>
+    <script src="./assets/results-data.js"></script>
+    <style>
+      @font-face {
+        font-family: "Amalgama";
+        src: url("./assets/fonts/Amalgama.ttf") format("truetype");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Hitmarker";
+        src: url("./assets/fonts/HitmarkerNormal-Black.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Hitmarker Text";
+        src: url("./assets/fonts/HitmarkerText-Regular.woff2") format("woff2");
+        font-display: swap;
+        font-weight: 400;
+      }
+
+      :root {
+        --ink: #f2f0f8;
+        --muted: #aaa3b8;
+        --paper: #121116;
+        --soft: #1b1922;
+        --panel: #18161d;
+        --line: #353141;
+        --accent: #b985ff;
+        --accent-strong: #d7bdff;
+        --red: #f06d5f;
+        --green: #6fcf91;
+        --blue: #6ea8ff;
+        --orange: #e7a858;
+        --wordmark-font: "Hitmarker";
+        --body-font: Poppins;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(185, 133, 255, 0.08), transparent 360px),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          var(--body-font), Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.52;
+      }
+
+      button,
+      select {
+        font: inherit;
+      }
+
+      button,
+      a,
+      select {
+        cursor: pointer;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.92em;
+      }
+
+      main {
+        margin: 0 auto;
+        width: min(1180px, calc(100% - 32px));
+      }
+
+      .hero {
+        background:
+          radial-gradient(circle at 82% 22%, rgba(185, 133, 255, 0.18), transparent 22rem),
+          linear-gradient(135deg, #181620 0%, #121116 58%);
+        border-bottom: 1px solid var(--line);
+        margin-left: calc(50% - 50vw);
+        padding: 42px max(16px, calc((100vw - 1180px) / 2)) 36px;
+        width: 100vw;
+      }
+
+      .hero-inner {
+        max-width: 1180px;
+      }
+
+      .hero-top {
+        align-items: flex-start;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+      }
+
+      .wordmark {
+        color: var(--ink);
+        display: inline-block;
+        font-family: var(--wordmark-font), "Amalgama", Poppins, ui-sans-serif, sans-serif;
+        font-size: 5.2rem;
+        font-style: normal;
+        font-weight: 400;
+        letter-spacing: 0;
+        line-height: 0.88;
+        margin: 0 0 1.1rem;
+        text-transform: uppercase;
+      }
+
+      .wordmark span {
+        color: var(--accent);
+      }
+
+      /* Tweak the QuickScope logo crosshair here. */
+      .scope-letter {
+        color: var(--accent);
+        display: inline-block;
+        margin: 0 0.03em;
+        position: relative;
+        z-index: 0;
+      }
+
+      .scope-letter::before,
+      .scope-letter::after {
+        background: #c2afdf;
+        content: "";
+        left: 50%;
+        position: absolute;
+        top: 58%;
+        /* transform: translate(-50%, -50%) rotate(6deg); */
+        z-index: -1;
+      }
+
+      /* horizontal bar */
+      .scope-letter::before {
+        height: 0.08em;
+        width: 0.9em;
+        transform: translate(-50%, -100%) rotate(0deg);
+      }
+
+      /* vertical bar */
+      .scope-letter::after {
+        height: 1em;
+        width: 0.08em;
+        transform: translate(-50%, -55%) rotate(0deg);
+      }
+
+      .hero-links {
+        display: grid;
+        gap: 14px;
+        min-width: 112px;
+      }
+
+      .hero-link {
+        align-items: center;
+        color: var(--ink);
+        display: inline-flex;
+        font-size: 1rem;
+        font-weight: 700;
+        gap: 10px;
+        text-decoration: none;
+      }
+
+      .hero-link:hover {
+        color: var(--accent-strong);
+      }
+
+      .hero-link svg,
+      .hero-link img {
+        height: 19px;
+        width: 19px;
+      }
+
+      .hero-link img {
+        display: block;
+        object-fit: contain;
+      }
+
+      .byline {
+        color: #81768f;
+        font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
+        font-size: 0.96rem;
+        margin: -0.25rem 0 0;
+      }
+
+      .byline a {
+        color: #9c8daf;
+        text-decoration-color: rgba(185, 133, 255, 0.4);
+      }
+
+      .byline a:hover {
+        color: var(--accent-strong);
+      }
+
+      .eyebrow {
+        color: var(--accent-strong);
+        font-size: 0.82rem;
+        font-weight: 750;
+        letter-spacing: 0;
+        margin: 0 0 0.85rem;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
+        font-size: 3.15rem;
+        letter-spacing: 0;
+        line-height: 1.05;
+        margin-bottom: 0.8rem;
+        max-width: 1040px;
+      }
+
+      h2 {
+        font-size: 2.25rem;
+        letter-spacing: 0;
+        line-height: 1.08;
+        margin-bottom: 0.85rem;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .lead {
+        color: var(--muted);
+        font-size: 1.25rem;
+        max-width: 74ch;
+      }
+
+      .hero .lead {
+        font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
+      }
+
+      .lead a {
+        color: var(--accent-strong);
+        text-decoration-color: rgba(185, 133, 255, 0.55);
+      }
+
+      .cards,
+      .dynamic-flow,
+      .score-panels,
+      .space-metrics {
+        display: grid;
+        gap: 12px;
+      }
+
+      .stat,
+      .card,
+      .score-panel,
+      .dynamic-panel,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+      }
+
+      .stat {
+        padding: 0.8rem 0.9rem;
+      }
+
+      .stat span,
+      .muted,
+      .caption,
+      td {
+        color: var(--muted);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.35rem;
+      }
+
+      section {
+        border-top: 1px solid var(--line);
+        padding: 56px 0;
+      }
+
+      .explorer {
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      .score-panels {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        margin-top: 1.25rem;
+      }
+
+      .score-panel {
+        background: var(--soft);
+        padding: 0.8rem;
+      }
+
+      .score-panel h3 {
+        font-size: 0.88rem;
+        margin-bottom: 0.7rem;
+      }
+
+      .score-row {
+        display: grid;
+        gap: 3px;
+        margin-top: 0.42rem;
+      }
+
+      .score-label {
+        align-items: baseline;
+        display: flex;
+        font-size: 0.68rem;
+        gap: 8px;
+        justify-content: space-between;
+      }
+
+      .score-label span:first-child {
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .score-label span:last-child {
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .score-track {
+        background: #2b2735;
+        height: 6px;
+        overflow: hidden;
+      }
+
+      .score-bar {
+        background: var(--accent);
+        height: 100%;
+      }
+
+      .dynamic-block {
+        margin-top: 1.25rem;
+      }
+
+      .dynamic-flow {
+        align-items: stretch;
+        grid-template-columns: 1.05fr 0.95fr 1.1fr;
+      }
+
+      .dynamic-panel {
+        padding: 0.85rem;
+      }
+
+      .code-panel {
+        background: #0f0e13;
+      }
+
+      .code-block {
+        color: #d9d3e8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.78rem;
+        line-height: 1.48;
+        margin: 0;
+        white-space: pre-wrap;
+      }
+
+      .syntax-keyword,
+      .syntax-function {
+        color: var(--accent-strong);
+      }
+
+      .syntax-key {
+        color: #8ed4ff;
+      }
+
+      .syntax-string {
+        color: #f0bc7b;
+      }
+
+      .syntax-number {
+        color: #79d8a6;
+      }
+
+      .syntax-arg {
+        color: #ff9e9e;
+      }
+
+      .syntax-variable {
+        color: #d9d3e8;
+      }
+
+      .question-card {
+        background: #17151d;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--ink);
+        font-size: 0.86rem;
+        line-height: 1.48;
+        margin: 0;
+        padding: 0.75rem;
+      }
+
+      .dynamic-panel-header {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 0.5rem;
+      }
+
+      .dynamic-panel-header h3 {
+        margin-bottom: 0;
+      }
+
+      .stage-label {
+        border: 1px solid rgba(185, 133, 255, 0.45);
+        border-radius: 999px;
+        color: var(--accent-strong);
+        flex: 0 0 auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.68rem;
+        line-height: 1;
+        padding: 0.22rem 0.34rem;
+      }
+
+      .chip-list,
+      .instance-list {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .chip-list li,
+      .instance-list li {
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--muted);
+        list-style: none;
+        padding: 0.35rem 0.45rem;
+      }
+
+      .space-row {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 0.85fr 1fr;
+        margin-top: 14px;
+      }
+
+      .space-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .sampling-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1rem;
+      }
+
+      .sampling-compare {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dot-field {
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(12, 1fr);
+        margin: 0.5rem 0 0.6rem;
+      }
+
+      .dot-field span {
+        aspect-ratio: 1;
+        border-radius: 50%;
+      }
+
+      .dot-field .d0 {
+        background: #5577b8;
+      }
+
+      .dot-field .d1 {
+        background: #6d8fc0;
+      }
+
+      .dot-field .d2 {
+        background: #8f8798;
+      }
+
+      .dot-field .d3 {
+        background: #d89162;
+      }
+
+      .dot-field .d4 {
+        background: var(--red);
+      }
+
+      .dot-field .sampled {
+        box-shadow: 0 0 0 2px rgba(215, 189, 255, 0.55);
+      }
+
+      .dot-field .focus {
+        box-shadow: 0 0 0 2px rgba(242, 240, 248, 0.65);
+        transform: scale(1.08);
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 1rem 0 1.2rem;
+      }
+
+      label {
+        color: var(--muted);
+        display: grid;
+        font-size: 0.82rem;
+        gap: 4px;
+      }
+
+      select {
+        appearance: none;
+        background:
+          linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 16px)
+            52% / 6px 6px no-repeat,
+          var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--ink);
+        min-height: 42px;
+        padding: 0.55rem 2rem 0.55rem 0.7rem;
+      }
+
+      .explorer-grid {
+        display: grid;
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr) 250px;
+        gap: 14px;
+      }
+
+      .chart-wrap {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1rem;
+        position: relative;
+      }
+
+      .chart-tooltip {
+        background: rgba(18, 17, 22, 0.94);
+        border: 1px solid rgba(185, 133, 255, 0.5);
+        border-radius: 6px;
+        color: var(--ink);
+        display: none;
+        font-size: 0.78rem;
+        max-width: 260px;
+        padding: 0.65rem;
+        pointer-events: none;
+        position: absolute;
+        z-index: 4;
+      }
+
+      .chart-tooltip strong {
+        display: block;
+        margin-bottom: 0.35rem;
+      }
+
+      .chart-tooltip div {
+        align-items: baseline;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      canvas {
+        display: block;
+        height: 420px;
+        width: 100%;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 0.8rem;
+      }
+
+      .legend span {
+        align-items: center;
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 0.9rem;
+        gap: 6px;
+      }
+
+      .swatch {
+        border-radius: 99px;
+        display: inline-block;
+        height: 3px;
+        width: 24px;
+      }
+
+      .side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .side .panel {
+        min-height: 0;
+      }
+
+      .panel {
+        padding: 0.95rem;
+      }
+
+      .panel p {
+        margin-bottom: 0.7rem;
+      }
+
+      .mini-metrics {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mini-metrics div {
+        border-top: 1px solid var(--line);
+        padding-top: 0.65rem;
+      }
+
+      .mini-metrics div:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .side-scroll {
+        margin: 0 -0.95rem -0.95rem;
+        max-height: 540px;
+        overflow: auto;
+        scrollbar-color: rgba(185, 133, 255, 0.6) #0f0e13;
+        scrollbar-width: thin;
+      }
+
+      .side-scroll::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+      }
+
+      .side-scroll::-webkit-scrollbar-track {
+        background: #0f0e13;
+      }
+
+      .side-scroll::-webkit-scrollbar-thumb {
+        background: rgba(185, 133, 255, 0.55);
+        border: 2px solid #0f0e13;
+        border-radius: 999px;
+      }
+
+      .side-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(215, 189, 255, 0.8);
+      }
+
+      .side-scroll table {
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        width: 100%;
+      }
+
+      .side-scroll th,
+      .side-scroll td {
+        overflow: hidden;
+        font-size: 0.76rem;
+        padding: 0.5rem 0.5rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .side-scroll th {
+        background: var(--panel);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .side-scroll th:nth-child(1),
+      .side-scroll td:nth-child(1) {
+        color: var(--accent-strong);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        width: 12%;
+      }
+
+      .side-scroll th:nth-child(2),
+      .side-scroll td:nth-child(2) {
+        width: 37%;
+      }
+
+      .side-scroll th:nth-child(3),
+      .side-scroll td:nth-child(3) {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        text-align: right;
+        width: 22%;
+      }
+
+      .side-scroll th:nth-child(4),
+      .side-scroll td:nth-child(4) {
+        text-align: center;
+        width: 29%;
+      }
+
+      .config-toggle {
+        align-items: center;
+        background: transparent;
+        border: 1px solid rgba(185, 133, 255, 0.46);
+        border-radius: 50%;
+        color: var(--accent-strong);
+        display: inline-flex;
+        font-weight: 800;
+        height: 1.35rem;
+        justify-content: center;
+        line-height: 1;
+        padding: 0;
+        width: 1.35rem;
+      }
+
+      .config-detail-row[hidden] {
+        display: none;
+      }
+
+      .config-detail {
+        background: #0f0e13;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--muted);
+        margin: 0;
+        padding: 0.55rem;
+        text-align: left;
+        white-space: normal;
+      }
+
+      .controls {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        margin-top: 0.9rem;
+      }
+
+      .scrubber {
+        accent-color: var(--accent);
+        width: 100%;
+      }
+
+      .icon-button {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        color: var(--accent-strong);
+        display: inline-flex;
+        font-size: 1.15rem;
+        height: 28px;
+        justify-content: center;
+        padding: 0;
+        width: 28px;
+      }
+
+      .icon-button:hover {
+        color: var(--ink);
+      }
+
+      .callout-value {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.86rem;
+        min-width: 8ch;
+        text-align: right;
+      }
+
+      button {
+        border: 1px solid var(--accent);
+        border-radius: 5px;
+        background: var(--accent);
+        color: #15121c;
+        padding: 0.55rem 0.8rem;
+      }
+
+      button.secondary {
+        background: transparent;
+        color: var(--ink);
+      }
+
+      .cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.2rem;
+      }
+
+      .algorithm-cards {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.15rem;
+      }
+
+      .algorithm-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1rem;
+      }
+
+      .algorithm-card p {
+        color: var(--muted);
+        margin-bottom: 0;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .card p,
+      .dynamic-panel p {
+        color: var(--muted);
+        margin-bottom: 0;
+      }
+
+      .dynamic-panel .question-card {
+        color: var(--ink);
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 0.7rem 0.55rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--ink);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+      }
+
+      .caption {
+        font-size: 0.94rem;
+        margin: 0.8rem 0 0;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        padding: 28px 0 42px;
+      }
+
+      @media (max-width: 940px) {
+        .filters,
+        .explorer-grid,
+        .algorithm-cards,
+        .cards,
+        .dynamic-flow,
+        .score-panels,
+        .sampling-compare,
+        .space-row {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          padding-top: 34px;
+        }
+
+        .hero-top {
+          display: block;
+        }
+
+        .hero-links {
+          justify-content: flex-start;
+          margin-bottom: 1.1rem;
+        }
+
+        .wordmark {
+          font-size: 3.8rem;
+        }
+
+        h1 {
+          font-size: 2.2rem;
+          max-width: 20ch;
+        }
+
+        h2 {
+          font-size: 1.9rem;
+        }
+
+        .lead {
+          font-size: 1.12rem;
+        }
+
+        section {
+          padding: 42px 0;
+        }
+      }
+
+      @media (max-width: 620px) {
+        main {
+          width: min(100% - 24px, 1180px);
+        }
+
+        canvas {
+          height: 360px;
+        }
+
+        h1 {
+          font-size: 1.9rem;
+        }
+
+        h2 {
+          font-size: 1.6rem;
+        }
+
+        .wordmark {
+          font-size: 2.7rem;
+        }
+
+        .explorer {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="hero-top">
+            <p class="wordmark">Quick<span>Sc</span><span class="scope-letter">o</span><span>pe</span></p>
+            <nav class="hero-links" aria-label="Project links">
+              <a class="hero-link" href="https://github.com/narunraman/quickscope">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path fill="currentColor" d="M8 0.2a8 8 0 0 0-2.53 15.59c0.4 0.07 0.55-0.17 0.55-0.38v-1.48c-2.24 0.49-2.71-0.95-2.71-0.95-0.37-0.93-0.9-1.18-0.9-1.18-0.73-0.5 0.06-0.49 0.06-0.49 0.81 0.06 1.24 0.83 1.24 0.83 0.72 1.23 1.88 0.88 2.34 0.67 0.07-0.52 0.28-0.88 0.51-1.08-1.79-0.2-3.67-0.89-3.67-3.98 0-0.88 0.31-1.6 0.83-2.16-0.08-0.2-0.36-1.02 0.08-2.13 0 0 0.68-0.22 2.21 0.82A7.7 7.7 0 0 1 8 4.02c0.68 0 1.36 0.09 1.99 0.27 1.53-1.04 2.21-0.82 2.21-0.82 0.44 1.11 0.16 1.93 0.08 2.13 0.52 0.56 0.83 1.28 0.83 2.16 0 3.09-1.88 3.77-3.67 3.97 0.29 0.25 0.54 0.74 0.54 1.49v2.2c0 0.21 0.15 0.46 0.55 0.38A8 8 0 0 0 8 0.2Z" />
+                </svg>
+                Code
+              </a>
+              <a class="hero-link" href="https://github.com/narunraman/MA-eval/blob/main/paper/main.tex">
+                <img src="./assets/arxiv-logomark-small.svg" alt="" aria-hidden="true" />
+                arXiv
+              </a>
+            </nav>
+          </div>
+          <div>
+            <h1 id="headline"></h1>
+            <p class="lead" id="subhead"></p>
+            <p class="byline" id="byline"></p>
+          </div>
+        </div>
+      </header>
+
+      <section aria-labelledby="why-title">
+        <h2 id="why-title">Average scores hide the interesting failures.</h2>
+        <p class="lead">
+          On saturated benchmarks, strong models can look nearly tied on headline
+          averages. QuickScope is aimed at the diagnostic question underneath:
+          where does a model still fail reliably, and what kind of benchmark region
+          produces that failure?
+        </p>
+        <div class="score-panels" id="score-panels"></div>
+        <p class="caption" id="score-note"></p>
+      </section>
+
+      <section aria-labelledby="template-title">
+        <h2 id="template-title">Dynamic benchmarks solve one problem and create another.</h2>
+        <p class="lead">
+          Generators help avoid benchmark saturation by producing fresh variants of
+          the same underlying task. But once a benchmark becomes a large parameter
+          space, the evaluation question shifts: which regions are actually hard,
+          and how many repeated samples are needed to prove it?
+        </p>
+        <div class="dynamic-block">
+          <div class="dynamic-flow">
+            <article class="dynamic-panel code-panel">
+              <div class="dynamic-panel-header">
+                <!-- <span class="stage-label">(a)</span> -->
+                <h3>Configuration</h3>
+              </div>
+              <pre class="code-block" id="config-code"></pre>
+            </article>
+            <article class="dynamic-panel code-panel">
+              <div class="dynamic-panel-header">
+                <!-- <span class="stage-label">(b)</span> -->
+                <h3>Generator</h3>
+              </div>
+              <pre class="code-block" id="generator-code"></pre>
+            </article>
+            <article class="dynamic-panel">
+              <div class="dynamic-panel-header">
+                <!-- <span class="stage-label">(c)</span> -->
+                <h3>Fresh instance</h3>
+              </div>
+              <p class="question-card" id="instance-question"></p>
+            </article>
+          </div>
+          <div class="space-row">
+            <div class="space-metrics" id="space-metrics"></div>
+            <div class="sampling-compare">
+              <article class="sampling-panel">
+                <h3>Uniform sampling</h3>
+                <div class="dot-field" id="uniform-dots"></div>
+                <p class="muted">A few hard regions appear, but most get too few repeat samples to certify.</p>
+              </article>
+              <article class="sampling-panel">
+                <h3>QuickScope</h3>
+                <div class="dot-field" id="adaptive-dots"></div>
+                <p class="muted">Budget concentrates where repeated samples keep the lower bound high.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="algorithm-title">
+        <h2 id="algorithm-title">QuickScope builds on Algorithm Configuration.</h2>
+        <p class="lead">
+          Searching a dynamic benchmark is only well-defined once you decide what
+          you care about: raw error, error relative to complexity, robustness to a
+          perturbation, or some other utility. QuickScope uses
+          <a href="https://arxiv.org/abs/2510.14683">COUP</a>, an algorithm for
+          optimizing user-defined utilities over large configuration spaces, then
+          retools it for modern LLM evaluation pipelines: batched model calls,
+          aggregate utilities, and hardness certification.
+        </p>
+        <div class="algorithm-cards">
+          <article class="algorithm-card">
+            <h3>Choose the target</h3>
+            <p>Set the utility: error rate, complexity-weighted error, or another scalar objective for what counts as hard.</p>
+          </article>
+          <article class="algorithm-card">
+            <h3>Allocate budget</h3>
+            <p>Set the model-call budget, batch size, and exploration settings; COUP uses observed utilities to revisit promising regions.</p>
+          </article>
+          <article class="algorithm-card">
+            <h3>Certify hardness</h3>
+            <p>With a threshold, configurations can be removed once their lower confidence bound is high enough, freeing calls for the next uncertain region.</p>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="explorer-title">
+        <h2 id="explorer-title">Results explorer</h2>
+        <p class="lead">
+          Choose a benchmark, model, and utility. The plot compares the configurations
+          found by QuickScope variants against uniform sampling where that baseline is
+          available.
+        </p>
+        <div class="explorer">
+          <div class="filters">
+            <label>Benchmark<select id="benchmark"></select></label>
+            <label>Model<select id="model"></select></label>
+            <label>Utility<select id="utility"></select></label>
+          </div>
+          <div class="explorer-grid">
+            <div class="chart-wrap">
+              <canvas id="chart" width="980" height="520"></canvas>
+              <div class="chart-tooltip" id="chart-tooltip"></div>
+              <div class="legend" id="chart-legend"></div>
+              <div class="controls">
+                <input class="scrubber" id="config-count" type="range" min="5" max="200" step="5" value="40" aria-label="Number of top configurations" />
+                <span class="callout-value" id="config-count-value">top 40</span>
+              </div>
+              <p class="caption" id="chart-caption"></p>
+            </div>
+            <aside class="side">
+              <div class="panel">
+                <p class="eyebrow">Top found configs</p>
+                <div class="side-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>Method</th>
+                        <th>Mean</th>
+                        <th>Config</th>
+                      </tr>
+                    </thead>
+                    <tbody id="side-configs"></tbody>
+                  </table>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Updated <span id="updated"></span>.
+      </footer>
+    </main>
+
+    <script>
+      const page = window.QUICKSCOPE_PAGE;
+      if (window.QUICKSCOPE_RESULTS?.comparisons?.length) {
+        page.comparisons = window.QUICKSCOPE_RESULTS.comparisons;
+      } else {
+        page.comparisons = page.runs.map((run) => ({
+          id: run.id,
+          benchmark: run.benchmark,
+          model: run.model,
+          utility: run.utility,
+          summary: run.summary,
+          metrics: run.metrics,
+          methods: [{
+            id: run.id,
+            label: run.method,
+            kind: "quickscope",
+            threshold: run.threshold,
+            sampled: Number(String(run.metrics?.[0]?.value || "0").replace(/,/g, "")),
+            maxCalls: Math.max(...(run.configTraces?.[0]?.points || run.series).map((point) => point.calls ?? point.c)),
+            series: (run.topConfigs || []).map((config, index) => ({
+              k: index + 1,
+              mean: config.mean,
+              min: config.mean,
+            })),
+            topConfigs: run.topConfigs || [],
+          }],
+        }));
+      }
+      const colors = {
+        ink: "#f2f0f8",
+        muted: "#aaa3b8",
+        paper: "#121116",
+        panel: "#18161d",
+        line: "#353141",
+        red: "#f06d5f",
+        green: "#6fcf91",
+        blue: "#6ea8ff",
+        orange: "#e7a858",
+        accent: "#b985ff",
+      };
+
+      const methodColors = [
+        colors.accent,
+        colors.green,
+        colors.orange,
+        colors.blue,
+        colors.red,
+        colors.ink,
+      ];
+
+      const state = {
+        comparison: page.comparisons[0],
+        topK: 40,
+        hoverK: null,
+        hoverMethod: null,
+        chartArea: null,
+      };
+
+      const chart = document.getElementById("chart");
+      const ctx = chart.getContext("2d");
+      const chartTooltip = document.getElementById("chart-tooltip");
+      const selects = {
+        benchmark: document.getElementById("benchmark"),
+        model: document.getElementById("model"),
+        utility: document.getElementById("utility"),
+      };
+      const configCount = document.getElementById("config-count");
+      const configCountValue = document.getElementById("config-count-value");
+
+      document.getElementById("headline").textContent = page.headline;
+      document.getElementById("subhead").textContent = page.subhead;
+      document.getElementById("byline").innerHTML = `Work by ${page.byline.map((author, index) => {
+        const separator = index === page.byline.length - 1 ? "and " : "";
+        const suffix = index === page.byline.length - 1 ? "." : ", ";
+        return `${separator}<a href="${author.url}">${author.name}</a>${suffix}`;
+      }).join("")}`;
+      document.getElementById("updated").textContent = page.updated;
+
+      function renderScorePanels() {
+        const panels = page.benchmarkScorePanels;
+        const target = document.getElementById("score-panels");
+        target.innerHTML = "";
+        panels.panels.forEach((panel) => {
+          const node = document.createElement("article");
+          node.className = "score-panel";
+          const rows = panel.scores.map((score) => `
+            <div class="score-row">
+              <div class="score-label">
+                <span>${score.model}</span>
+                <span>${score.score.toFixed(3)}</span>
+              </div>
+              <div class="score-track">
+                <div class="score-bar" style="width: ${Math.max(0, Math.min(100, score.score * 100))}%"></div>
+              </div>
+            </div>
+          `).join("");
+          node.innerHTML = `<h3>${panel.benchmark}</h3>${rows}`;
+          target.appendChild(node);
+        });
+        document.getElementById("score-note").textContent =
+          `${panels.source}; fetched ${panels.fetched}. ${panels.note}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;",
+        })[char]);
+      }
+
+      function renderDynamicSearch() {
+        const dynamic = page.dynamicSearch;
+        const renderCode = (rows) => rows.map((row) => {
+          if (row[0] === "plain") return escapeHtml(row[1]);
+          if (row[0] === "tokens") {
+            return row[1].map(([type, value]) =>
+              type === "plain" ? escapeHtml(value) : `<span class="syntax-${type}">${escapeHtml(value)}</span>`
+            ).join("");
+          }
+          if (row[0] === "const") {
+            return `<span class="syntax-keyword">${escapeHtml(row[0])}</span> ${escapeHtml(row[1])}${escapeHtml(row[2])}`;
+          }
+          if (row[0] === "function") {
+            return `<span class="syntax-keyword">function</span> <span class="syntax-function">${escapeHtml(row[1])}</span>${escapeHtml(row[2])}<span class="syntax-arg">${escapeHtml(row[3])}</span>${escapeHtml(row[4])}`;
+          }
+          if (row.length === 3) {
+            return `<span class="syntax-${row[0]}">${escapeHtml(row[1])}</span>${escapeHtml(row[2])}`;
+          }
+          return `<span class="syntax-${row[0]}">${escapeHtml(row[1])}</span>${escapeHtml(row[2])}<span class="syntax-${row[3]}">${escapeHtml(row[4])}</span>`;
+        }).join("\n");
+        document.getElementById("config-code").innerHTML = renderCode(dynamic.configCode);
+        document.getElementById("generator-code").innerHTML = renderCode(dynamic.generatorCode);
+        document.getElementById("instance-question").textContent = dynamic.instanceQuestion;
+
+        const metrics = document.getElementById("space-metrics");
+        metrics.innerHTML = "";
+        dynamic.spaces.forEach((item) => {
+          const node = document.createElement("div");
+          node.className = "stat";
+          node.innerHTML = `<strong>${item.size}</strong><span>${item.benchmark}</span>`;
+          metrics.appendChild(node);
+        });
+
+        function fillDots(id, adaptive) {
+          const target = document.getElementById(id);
+          target.innerHTML = "";
+          const uniformDifficulties = [
+            0, 1, 1, 2, 0, 1, 2, 1, 1, 0, 2, 1,
+            1, 2, 0, 1, 3, 4, 2, 1, 2, 0, 1, 2,
+            0, 1, 2, 2, 3, 2, 1, 1, 0, 2, 1, 2,
+            1, 0, 2, 2, 3, 4, 2, 1, 1, 0, 2, 1,
+            0, 1, 2, 1, 2, 2, 1, 0, 2, 1, 0, 2,
+          ];
+          const adaptiveDifficulties = [
+            0, 1, 1, 2, 0, 1, 2, 3, 1, 0, 2, 1,
+            1, 2, 0, 3, 4, 4, 3, 1, 2, 0, 1, 2,
+            0, 2, 3, 4, 4, 4, 3, 1, 0, 2, 1, 2,
+            1, 0, 2, 3, 4, 4, 3, 2, 1, 0, 2, 1,
+            0, 1, 2, 1, 3, 2, 1, 0, 2, 1, 0, 3,
+          ];
+          const difficulties = adaptive ? adaptiveDifficulties : uniformDifficulties;
+          const uniformSampled = new Set([0, 3, 7, 11, 14, 18, 20, 24, 27, 31, 34, 38, 43, 45, 48, 52, 55, 59]);
+          const adaptiveSampled = new Set([0, 7, 16, 17, 18, 27, 28, 29, 30, 31, 40, 41, 42, 43, 52, 59]);
+          const focus = new Set([16, 17, 18, 28, 29, 30, 40, 41, 42]);
+          for (let index = 0; index < 60; index += 1) {
+            const dot = document.createElement("span");
+            const sampled = adaptive ? adaptiveSampled.has(index) : uniformSampled.has(index);
+            dot.className = `d${difficulties[index]}${sampled ? " sampled" : ""}${adaptive && focus.has(index) ? " focus" : ""}`;
+            target.appendChild(dot);
+          }
+        }
+        fillDots("uniform-dots", false);
+        fillDots("adaptive-dots", true);
+      }
+
+      function unique(field, comparisons = page.comparisons) {
+        return [...new Set(comparisons.map((comparison) => comparison[field]))].sort();
+      }
+
+      function fillSelect(select, values, selected) {
+        select.innerHTML = "";
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          option.selected = value === selected;
+          select.appendChild(option);
+        });
+      }
+
+      function filteredComparisons() {
+        return page.comparisons.filter((comparison) =>
+          comparison.benchmark === selects.benchmark.value &&
+          comparison.model === selects.model.value &&
+          comparison.utility === selects.utility.value
+        );
+      }
+
+      function syncFilters(changed) {
+        const current = {
+          benchmark: selects.benchmark.value || state.comparison.benchmark,
+          model: selects.model.value || state.comparison.model,
+          utility: selects.utility.value || state.comparison.utility,
+        };
+
+        if (!changed || changed === "benchmark") {
+          fillSelect(selects.benchmark, unique("benchmark"), current.benchmark);
+        }
+
+        const byBenchmark = page.comparisons.filter((comparison) => comparison.benchmark === selects.benchmark.value);
+        if (!byBenchmark.some((comparison) => comparison.model === current.model)) current.model = byBenchmark[0].model;
+        fillSelect(selects.model, unique("model", byBenchmark), current.model);
+
+        const byModel = byBenchmark.filter((comparison) => comparison.model === selects.model.value);
+        if (!byModel.some((comparison) => comparison.utility === current.utility)) current.utility = byModel[0].utility;
+        fillSelect(selects.utility, unique("utility", byModel), current.utility);
+
+        state.comparison = filteredComparisons()[0] || byModel[0] || page.comparisons[0];
+        renderComparison();
+      }
+
+      Object.entries(selects).forEach(([field, select]) => {
+        select.addEventListener("change", () => syncFilters(field));
+      });
+
+      function methodAtK(method, k) {
+        if (!method.series.length) return null;
+        return method.series[Math.min(k, method.series.length) - 1];
+      }
+
+      function renderComparison() {
+        const comparison = state.comparison;
+        document.getElementById("chart-caption").textContent =
+          `${comparison.utility}. Each curve ranks the configurations found by that method and shows cumulative mean utility through the top K. Higher is harder.`;
+        const maxK = Math.max(...comparison.methods.map((method) => method.series.length));
+        configCount.max = String(Math.max(5, maxK));
+        configCount.value = String(Math.min(state.topK, Number(configCount.max)));
+        state.topK = Number(configCount.value);
+        configCountValue.textContent = `top ${state.topK}`;
+
+        const legend = document.getElementById("chart-legend");
+        legend.innerHTML = "";
+        comparison.methods.forEach((method, index) => {
+          const node = document.createElement("span");
+          node.innerHTML = `<i class="swatch" style="background: ${methodColors[index % methodColors.length]}"></i>${method.label}`;
+          legend.appendChild(node);
+        });
+
+        const rows = document.getElementById("side-configs");
+        rows.innerHTML = "";
+        let detailId = 0;
+        comparison.methods.forEach((method) => {
+          method.topConfigs.forEach((config) => {
+            detailId += 1;
+            const rowId = `config-detail-${detailId}`;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${config.rank}</td>
+              <td>${method.label}</td>
+              <td>${Number(config.mean).toFixed(2)}</td>
+              <td>
+                <button class="config-toggle" aria-expanded="false" aria-controls="${rowId}" title="${escapeHtml(config.name)}">?</button>
+              </td>
+            `;
+            rows.appendChild(tr);
+            const detail = document.createElement("tr");
+            detail.className = "config-detail-row";
+            detail.id = rowId;
+            detail.hidden = true;
+            detail.innerHTML = `<td colspan="4"><p class="config-detail">${escapeHtml(config.name)}</p></td>`;
+            rows.appendChild(detail);
+          });
+        });
+
+        drawChart();
+      }
+
+      function scale(value, min, max, outMin, outMax) {
+        if (max === min) return outMin;
+        return outMin + ((value - min) / (max - min)) * (outMax - outMin);
+      }
+
+      function drawLine(points, key, area, color, width = 2) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
+          const y = scale(point[key], area.minY, area.maxY, area.bottom, area.top);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      function drawBand(points, area, color) {
+        if (points.length < 2) return;
+        if (points.some((point) => point.lcb === undefined)) return;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
+          const y = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        [...points].reverse().forEach((point) => {
+          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
+          const y = scale(point.lcb, area.minY, area.maxY, area.bottom, area.top);
+          ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function hexToRgba(hex, alpha) {
+        const value = hex.replace("#", "");
+        const r = parseInt(value.slice(0, 2), 16);
+        const g = parseInt(value.slice(2, 4), 16);
+        const b = parseInt(value.slice(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      function drawChart() {
+        const comparison = state.comparison;
+        const topK = Math.max(1, Math.min(state.topK, Math.max(...comparison.methods.map((method) => method.series.length))));
+        const visibleValues = comparison.methods.flatMap((method) =>
+          method.series.slice(0, topK).flatMap((point) => [point.mean, point.lcb ?? point.mean])
+        );
+        let dataMin = Math.min(...visibleValues);
+        let dataMax = Math.max(...visibleValues);
+        if (!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) {
+          dataMin = 0;
+          dataMax = 1;
+        }
+        let yMin = 0;
+        let yMax = 1;
+        if (comparison.utility === "complexity-weighted error") {
+          yMax = dataMax > 0.5 ? Math.min(1, dataMax + 0.05) : 0.5;
+        } else {
+          const span = Math.max(0.08, dataMax - dataMin);
+          yMin = Math.max(0, dataMin - span * 0.18);
+          yMax = Math.min(1, dataMax + span * 0.18);
+          if (dataMin > 0.28) yMin = Math.max(0.2, yMin);
+          if (yMax - yMin < 0.16) {
+            const mid = (yMin + yMax) / 2;
+            yMin = Math.max(0, mid - 0.08);
+            yMax = Math.min(1, mid + 0.08);
+          }
+        }
+        const dpr = window.devicePixelRatio || 1;
+        const rect = chart.getBoundingClientRect();
+        chart.width = Math.round(rect.width * dpr);
+        chart.height = Math.round(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const width = rect.width;
+        const height = rect.height;
+        const area = {
+          left: 54,
+          right: width - 24,
+          top: 24,
+          bottom: height - 46,
+          minX: 1,
+          maxX: topK,
+          minY: yMin,
+          maxY: yMax,
+        };
+        state.chartArea = area;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = colors.panel;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = colors.line;
+        ctx.lineWidth = 1;
+        ctx.font = "12px Poppins, ui-sans-serif, sans-serif";
+        ctx.fillStyle = colors.muted;
+        for (let i = 0; i <= 4; i += 1) {
+          const yValue = area.minY + ((area.maxY - area.minY) * i) / 4;
+          const y = scale(yValue, area.minY, area.maxY, area.bottom, area.top);
+          ctx.beginPath();
+          ctx.moveTo(area.left, y);
+          ctx.lineTo(area.right, y);
+          ctx.stroke();
+          ctx.fillText(yValue.toFixed(2), 12, y + 4);
+        }
+        for (let i = 0; i <= 4; i += 1) {
+          const xValue = area.minX + ((area.maxX - area.minX) * i) / 4;
+          const x = scale(xValue, area.minX, area.maxX, area.left, area.right);
+          ctx.beginPath();
+          ctx.moveTo(x, area.top);
+          ctx.lineTo(x, area.bottom);
+          ctx.stroke();
+          ctx.fillText(`${Math.round(xValue)}`, x - 8, area.bottom + 24);
+        }
+        ctx.fillText("top K configurations", area.right - 130, area.bottom + 38);
+
+        comparison.methods.forEach((method, index) => {
+          const points = method.series.slice(0, topK);
+          drawBand(points, area, hexToRgba(methodColors[index % methodColors.length], 0.09));
+        });
+
+        comparison.methods.forEach((method, index) => {
+          const points = method.series.slice(0, topK);
+          const color = methodColors[index % methodColors.length];
+          if (method.kind === "uniform") {
+            ctx.setLineDash([4, 5]);
+            drawLine(points, "mean", area, color, 1.6);
+            ctx.setLineDash([]);
+          } else {
+            drawLine(points, "mean", area, color, 2.6);
+          }
+        });
+
+        const x = scale(topK, area.minX, area.maxX, area.left, area.right);
+        ctx.strokeStyle = "rgba(242, 240, 248, 0.45)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, area.top);
+        ctx.lineTo(x, area.bottom);
+        ctx.stroke();
+
+        const markerK = state.hoverK || topK;
+        const markerX = scale(markerK, area.minX, area.maxX, area.left, area.right);
+        ctx.strokeStyle = state.hoverK ? "rgba(242, 240, 248, 0.72)" : "rgba(242, 240, 248, 0.22)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(markerX, area.top);
+        ctx.lineTo(markerX, area.bottom);
+        ctx.stroke();
+        comparison.methods.forEach((method, index) => {
+          const point = methodAtK(method, markerK);
+          if (!point) return;
+          const markerY = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
+          ctx.fillStyle = methodColors[index % methodColors.length];
+          ctx.beginPath();
+          ctx.arc(markerX, markerY, method.id === state.hoverMethod ? 5 : 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+      }
+
+      configCount.addEventListener("input", (event) => {
+        state.topK = Number(event.target.value);
+        configCountValue.textContent = `top ${state.topK}`;
+        drawChart();
+      });
+
+      document.getElementById("side-configs").addEventListener("click", (event) => {
+        const button = event.target.closest(".config-toggle");
+        if (!button) return;
+        const detail = document.getElementById(button.getAttribute("aria-controls"));
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        button.setAttribute("aria-expanded", String(!expanded));
+        detail.hidden = expanded;
+      });
+
+      chart.addEventListener("mousemove", (event) => {
+        const area = state.chartArea;
+        if (!area) return;
+        const rect = chart.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
+          state.hoverK = null;
+          state.hoverMethod = null;
+          chartTooltip.style.display = "none";
+          drawChart();
+          return;
+        }
+        const topK = Math.max(1, Math.min(state.topK, Math.max(...state.comparison.methods.map((method) => method.series.length))));
+        const hoverK = Math.max(1, Math.min(topK, Math.round(scale(x, area.left, area.right, area.minX, area.maxX))));
+        let nearest = null;
+        state.comparison.methods.forEach((method, index) => {
+          const point = methodAtK(method, hoverK);
+          if (!point) return;
+          const pointY = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
+          const distance = Math.abs(pointY - y);
+          if (!nearest || distance < nearest.distance) {
+            nearest = { method, index, point, distance };
+          }
+        });
+        state.hoverK = hoverK;
+        state.hoverMethod = nearest?.method.id || null;
+        const rows = state.comparison.methods.map((method) => {
+          const point = methodAtK(method, hoverK);
+          return point ? `<div><span>${method.label}</span><span>${Number(point.mean).toFixed(3)}</span></div>` : "";
+        }).join("");
+        chartTooltip.innerHTML = `<strong>${nearest?.method.label || "Top K"} at K=${hoverK}</strong>${rows}`;
+        chartTooltip.style.display = "block";
+        chartTooltip.style.left = `${Math.min(rect.width - 280, Math.max(12, x + 14))}px`;
+        chartTooltip.style.top = `${Math.min(rect.height - 120, Math.max(12, y + 14))}px`;
+        drawChart();
+      });
+
+      chart.addEventListener("mouseleave", () => {
+        state.hoverK = null;
+        state.hoverMethod = null;
+        chartTooltip.style.display = "none";
+        drawChart();
+      });
+
+      window.addEventListener("resize", () => {
+        drawChart();
+      });
+      renderScorePanels();
+      renderDynamicSearch();
+      syncFilters();
+    </script>
+  </body>
+</html>
