@@ -82,10 +82,10 @@ window.QUICKSCOPE_PAGE = {
       ["plain", "}"],
     ],
     generatorCode: [
-      ["tokens", [["variable", "generator"], ["plain", " = "], ["function", "DyValScenarioGenerator"], ["plain", "("], ["key", "model"], ["plain", "="], ["variable", "model"], ["plain", ")"]]],
+      ["tokens", [["variable", "generator"], ["plain", " = "], ["function", "DyValGen"], ["plain", "("], ["key", "model"], ["plain", "="], ["variable", "model"], ["plain", ")"]]],
       ["tokens", [["variable", "rng"], ["plain", " = "], ["variable", "np"], ["plain", "."], ["variable", "random"], ["plain", "."], ["function", "default_rng"], ["plain", "("], ["number", "2"], ["plain", ")"]]],
-      ["tokens", [["variable", "row"], ["plain", " = "], ["variable", "generator"], ["plain", "."], ["function", "generate"], ["plain", "("], ["variable", "params"], ["plain", ", "], ["key", "rng"], ["plain", "="], ["variable", "rng"], ["plain", ")."], ["variable", "iloc"], ["plain", "["], ["number", "0"], ["plain", "]"]]],
-      ["tokens", [["variable", "question"], ["plain", " = "], ["variable", "row"], ["plain", "["], ["string", "\"scenario_text\""], ["plain", "]"]]],
+      ["tokens", [["variable", "qs"], ["plain", " = "], ["variable", "generator"], ["plain", "."], ["function", "generate"], ["plain", "("], ["variable", "params"], ["plain", ", "], ["variable", "rng"], ["plain", ")"]]],
+      ["tokens", [["variable", "question"], ["plain", " = "], ["variable", "qs"], ["plain", "["], ["string", "\"scenario_text\""], ["plain", "]."], ["variable", "iloc"], ["plain", "["], ["number", "0"], ["plain", "]"]]],
     ],
     instanceQuestion:
       "Here is a description of an arithmetic problem: The value of aae is 6. The value of aad is 2. aaf gets its value by adding together the value of aad and aae. The value of aag is 5. The value of aah is 5. aai gets its value by subtracting the value of aah from the value of aag. aaj gets its value by adding together the value of aaf and aai. Compute the result of aaj.",
