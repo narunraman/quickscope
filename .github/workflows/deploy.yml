@@ -1,0 +1,25 @@
+name: Deploy site to UBC
+
+on:
+  push:
+    branches: [main]
+    paths: [site/**]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.UBC_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.UBC_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          rsync -av --chmod=D755,F644 --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            site/ narunram@remote.cs.ubc.ca:~/public_html/quickscope/
