@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>QuickScope Results Explorer</title>
+    <title>QuickScope</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -1167,6 +1167,7 @@
         hoverK: null,
         hoverMethod: null,
         chartArea: null,
+        hiddenMethods: new Set(),
       };
 
       const chart = document.getElementById("chart");
@@ -1354,11 +1355,26 @@
         state.topK = Number(configCount.value);
         configCountValue.textContent = `top ${state.topK}`;
 
+        state.hiddenMethods.clear();
+
         const legend = document.getElementById("chart-legend");
         legend.innerHTML = "";
         comparison.methods.forEach((method, index) => {
+          const color = methodColors[index % methodColors.length];
           const node = document.createElement("span");
-          node.innerHTML = `<i class="swatch" style="background: ${methodColors[index % methodColors.length]}"></i>${method.label}`;
+          node.style.cursor = "pointer";
+          node.dataset.methodId = method.id;
+          node.innerHTML = `<i class="swatch" style="background: ${color}"></i>${method.label}`;
+          node.addEventListener("click", () => {
+            if (state.hiddenMethods.has(method.id)) {
+              state.hiddenMethods.delete(method.id);
+              node.style.opacity = "1";
+            } else {
+              state.hiddenMethods.add(method.id);
+              node.style.opacity = "0.35";
+            }
+            drawChart();
+          });
           legend.appendChild(node);
         });
 
@@ -1441,6 +1457,7 @@
         const comparison = state.comparison;
         const topK = Math.max(1, Math.min(state.topK, Math.max(...comparison.methods.map((method) => method.series.length))));
         const visibleValues = comparison.methods.flatMap((method) =>
+          state.hiddenMethods.has(method.id) ? [] :
           method.series.slice(0, topK).flatMap((point) => [point.mean, point.lcb ?? point.mean])
         );
         let dataMin = Math.min(...visibleValues);
@@ -1513,11 +1530,13 @@
         ctx.fillText("top K configurations", area.right - 130, area.bottom + 38);
 
         comparison.methods.forEach((method, index) => {
+          if (state.hiddenMethods.has(method.id)) return;
           const points = method.series.slice(0, topK);
           drawBand(points, area, hexToRgba(methodColors[index % methodColors.length], 0.09));
         });
 
         comparison.methods.forEach((method, index) => {
+          if (state.hiddenMethods.has(method.id)) return;
           const points = method.series.slice(0, topK);
           const color = methodColors[index % methodColors.length];
           if (method.kind === "uniform") {
@@ -1546,6 +1565,7 @@
         ctx.lineTo(markerX, area.bottom);
         ctx.stroke();
         comparison.methods.forEach((method, index) => {
+          if (state.hiddenMethods.has(method.id)) return;
           const point = methodAtK(method, markerK);
           if (!point) return;
           const markerY = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
