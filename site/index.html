@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QuickScope</title>
+    <!-- <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" /> -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -361,6 +362,10 @@
         grid-template-columns: 1.05fr 0.95fr 1.1fr;
       }
 
+      .flow-controls {
+        display: none;
+      }
+
       .dynamic-panel {
         padding: 0.85rem;
       }
@@ -458,6 +463,24 @@
         gap: 12px;
         grid-template-columns: 0.85fr 1fr;
         margin-top: 14px;
+      }
+
+      .visual-bridge {
+        color: var(--muted);
+        font-size: 0.98rem;
+        margin: 1rem 0 0;
+        max-width: 78ch;
+      }
+
+      .space-explainer,
+      .sampling-block {
+        min-width: 0;
+      }
+
+      .compact-copy {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-bottom: 0.75rem;
       }
 
       .space-metrics {
@@ -875,11 +898,128 @@
         .explorer-grid,
         .algorithm-cards,
         .cards,
-        .dynamic-flow,
         .score-panels,
-        .sampling-compare,
         .space-row {
           grid-template-columns: 1fr;
+        }
+
+        .score-panels {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .score-panel:nth-child(n + 5) {
+          display: none;
+        }
+
+        .dynamic-flow {
+          display: block;
+        }
+
+        .dynamic-flow .dynamic-panel {
+          display: none;
+        }
+
+        .dynamic-flow .dynamic-panel.is-active {
+          display: block;
+        }
+
+        .flow-controls {
+          border: 1px solid var(--line);
+          border-radius: 6px;
+          display: grid;
+          gap: 0;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          margin-bottom: 10px;
+          overflow: hidden;
+        }
+
+        .flow-step {
+          background: transparent;
+          border: 0;
+          border-left: 1px solid var(--line);
+          border-radius: 0;
+          color: var(--muted);
+          font-size: 0.78rem;
+          font-weight: 700;
+          padding: 0.65rem 0.35rem;
+        }
+
+        .flow-step:first-child {
+          border-left: 0;
+        }
+
+        .flow-step.is-active {
+          background: rgba(185, 133, 255, 0.16);
+          color: var(--accent-strong);
+        }
+
+        .visual-bridge {
+          font-size: 0.94rem;
+          margin-top: 1.1rem;
+        }
+
+        .space-row {
+          gap: 18px;
+          margin-top: 18px;
+        }
+
+        .space-metrics {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stat {
+          padding: 0.7rem;
+        }
+
+        .stat strong {
+          font-size: 1rem;
+        }
+
+        .stat span {
+          font-size: 0.72rem;
+        }
+
+        .dynamic-panel-header::before {
+          align-items: center;
+          border: 1px solid rgba(185, 133, 255, 0.45);
+          border-radius: 999px;
+          color: var(--accent-strong);
+          display: inline-flex;
+          flex: 0 0 auto;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: 0.66rem;
+          height: 1.25rem;
+          justify-content: center;
+          width: 1.25rem;
+        }
+
+        .dynamic-panel:nth-child(1) .dynamic-panel-header::before {
+          content: "1";
+        }
+
+        .dynamic-panel:nth-child(2) .dynamic-panel-header::before {
+          content: "2";
+        }
+
+        .dynamic-panel:nth-child(3) .dynamic-panel-header::before {
+          content: "3";
+        }
+
+        .sampling-compare {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .sampling-panel {
+          padding: 0.75rem;
+        }
+
+        .dot-field {
+          gap: 3px;
+          grid-template-columns: repeat(10, 1fr);
+        }
+
+        .sampling-panel p {
+          font-size: 0.78rem;
         }
 
         .hero {
@@ -941,6 +1081,11 @@
         .explorer {
           padding: 12px;
         }
+
+        .space-metrics,
+        .sampling-compare {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -992,8 +1137,13 @@
           and how many repeated samples are needed to prove it?
         </p>
         <div class="dynamic-block">
+          <div class="flow-controls" aria-label="Dynamic benchmark example steps">
+            <button class="flow-step is-active" type="button" data-flow-step="0">Config</button>
+            <button class="flow-step" type="button" data-flow-step="1">Generator</button>
+            <button class="flow-step" type="button" data-flow-step="2">Instance</button>
+          </div>
           <div class="dynamic-flow">
-            <article class="dynamic-panel code-panel">
+            <article class="dynamic-panel code-panel is-active">
               <div class="dynamic-panel-header">
                 <!-- <span class="stage-label">(a)</span> -->
                 <h3>Configuration</h3>
@@ -1015,19 +1165,32 @@
               <p style="color: var(--ink); font-size: 0.86rem" id="instance-question"></p>
             </article>
           </div>
+          <p class="visual-bridge">
+            The generator is reusable, but the configuration space is the object
+            being searched. The plots below separate the two questions: how large is
+            the space, and where should the evaluation budget go?
+          </p>
           <div class="space-row">
-            <div class="space-metrics" id="space-metrics"></div>
-            <div class="sampling-compare">
-              <article class="sampling-panel">
-                <h3>Uniform sampling</h3>
-                <div class="dot-field" id="uniform-dots"></div>
-                <p class="muted">A few hard regions appear, but most get too few repeat samples to certify.</p>
-              </article>
-              <article class="sampling-panel">
-                <h3>QuickScope</h3>
-                <div class="dot-field" id="adaptive-dots"></div>
-                <p class="muted">Budget concentrates where repeated samples keep the lower bound high.</p>
-              </article>
+            <div class="space-explainer">
+              <p class="eyebrow">Template search spaces</p>
+              <p class="compact-copy">Each count is a set of generator settings that can produce fresh benchmark instances.</p>
+              <div class="space-metrics" id="space-metrics"></div>
+            </div>
+            <div class="sampling-block">
+              <p class="eyebrow">Budget allocation</p>
+              <p class="compact-copy">Color marks difficulty. Rings mark sampled regions. QuickScope spends more calls where repeated samples keep looking hard.</p>
+              <div class="sampling-compare">
+                <article class="sampling-panel">
+                  <h3>Uniform sampling</h3>
+                  <div class="dot-field" id="uniform-dots"></div>
+                  <p class="muted">Samples broadly, so hard regions often get only one or two looks.</p>
+                </article>
+                <article class="sampling-panel">
+                  <h3>QuickScope</h3>
+                  <div class="dot-field" id="adaptive-dots"></div>
+                  <p class="muted">Revisits regions whose lower bounds stay high, building evidence.</p>
+                </article>
+              </div>
             </div>
           </div>
         </div>
@@ -1288,6 +1451,25 @@
         }
         fillDots("uniform-dots", false);
         fillDots("adaptive-dots", true);
+      }
+
+      function initDynamicCarousel() {
+        const panels = [...document.querySelectorAll(".dynamic-flow .dynamic-panel")];
+        const buttons = [...document.querySelectorAll("[data-flow-step]")];
+        if (!panels.length || !buttons.length) return;
+
+        function setStep(step) {
+          panels.forEach((panel, index) => panel.classList.toggle("is-active", index === step));
+          buttons.forEach((button, index) => {
+            button.classList.toggle("is-active", index === step);
+            button.setAttribute("aria-pressed", String(index === step));
+          });
+        }
+
+        buttons.forEach((button, index) => {
+          button.addEventListener("click", () => setStep(index));
+        });
+        setStep(0);
       }
 
       function unique(field, comparisons = page.comparisons) {
@@ -1642,6 +1824,7 @@
       });
       renderScorePanels();
       renderDynamicSearch();
+      initDynamicCarousel();
       syncFilters();
     </script>
   </body>
