@@ -1,0 +1,21 @@
+# GSM Symbolic dataset search space for reasoning_gym
+# Math word problems: 85 distinct problem templates with infinite numerical instantiations
+#
+# Each task_id selects a different problem STRUCTURE (template):
+#   - Template 0: Peeling/cooking time problems
+#   - Template 1: Counting toys/items problems
+#   - Template 2: Student grouping percentage problems
+#   - etc.
+#
+# The seed (provided by RNG) determines the specific numerical values,
+# names, and items within each template, allowing infinite unique questions
+# per template.
+
+# Task ID (1-85) selects the problem template
+# Maps to actual template indices: tasks_ok[task_id - 1]
+# Some original indices (32, 35, 37, 61, 63, 65, 74, 76, 77, 79, 86, 87, 90, 97, 98)
+# are excluded due to issues in the original dataset
+task_id:
+  type: int
+  lower: 1
+  upper: 85

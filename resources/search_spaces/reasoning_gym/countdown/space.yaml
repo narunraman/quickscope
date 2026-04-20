@@ -1,0 +1,27 @@
+# Countdown dataset search space for reasoning_gym
+# Arithmetic reasoning: combine numbers with operations to reach target
+
+min_numbers:
+  type: int
+  lower: 3
+  upper: 15
+max_numbers:
+  type: int
+  lower: 3
+  upper: 15
+min_value:
+  type: int
+  lower: 1
+  upper: 100
+max_value:
+  type: int
+  lower: 10
+  upper: 100
+min_target:
+  type: int
+  lower: 10
+  upper: 100
+max_target:
+  type: int
+  lower: 100
+  upper: 1000

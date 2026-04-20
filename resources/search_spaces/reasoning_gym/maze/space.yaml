@@ -1,0 +1,25 @@
+# Maze dataset search space for reasoning_gym
+# Spatial reasoning: navigate through grid-based mazes
+
+parameters:
+  min_dist:
+    type: int
+    lower: 3
+    upper: 15
+  max_dist:
+    type: int
+    lower: 5
+    upper: 30
+  min_grid_size:
+    type: int
+    lower: 5
+    upper: 15
+  max_grid_size:
+    type: int
+    lower: 10
+    upper: 30
+
+cache:
+  enabled: true
+  key_fields:
+    - scenario_id

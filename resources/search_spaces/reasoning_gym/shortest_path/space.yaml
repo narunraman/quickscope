@@ -1,0 +1,27 @@
+# Shortest Path dataset search space for reasoning_gym
+# Grid-based pathfinding: find shortest path from start to destination
+
+# Grid dimensions
+min_rows:
+  type: int
+  lower: 3
+  upper: 15
+max_rows:
+  type: int
+  lower: 5
+  upper: 25
+min_cols:
+  type: int
+  lower: 3
+  upper: 15
+max_cols:
+  type: int
+  lower: 5
+  upper: 25
+
+# Probability that a cell is blocked (X vs O)
+# Higher values = more obstacles = harder pathfinding
+p_blocked:
+  type: float
+  lower: 0.1
+  upper: 0.6

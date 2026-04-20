@@ -1,0 +1,4 @@
+paths:
+  logs: "logs"
+  results: "results"
+  configs: "resources"

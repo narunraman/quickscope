@@ -1,0 +1,18 @@
+# GSM-Symbolic search space
+#
+# Search over problem templates to find systematically hard problems.
+# Each problem_id has 50 instances for variance estimation.
+#
+# problem_id mapping:
+#   0-99:    Base GSM-Symbolic (same structure as GSM8K, different numbers)
+#   100-199: P1 perturbation (adds one extra clause)
+#   200-249: P2 perturbation (combines two problems)
+#
+# COUP's task: Find which problem structures are hardest for the model.
+# Instance sampling is random - tests whether hardness is systematic.
+
+# Unique problem template ID (250 total)
+problem_id:
+  type: int
+  lower: 0
+  upper: 249

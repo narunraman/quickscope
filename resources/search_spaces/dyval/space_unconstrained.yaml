@@ -1,0 +1,52 @@
+# DyVal search space for dynamic reasoning evaluation
+#
+# This space explores DAG-based reasoning problem parameters
+# to find challenging scenarios for LLM evaluation.
+# Reference: https://llm-eval.github.io/pages/code/dyval.html
+
+# Dataset type - which reasoning domain to test
+# Maps to integer for optimization:
+# 1=arithmetic, 2=linear_equation, 3=bool_logic, 4=deductive_logic,
+# 5=abductive_logic, 6=reachability, 7=max_sum_path
+dataset_type_id:
+  type: int
+  lower: 1
+  upper: 5
+
+# Depth of the DAG tree structure
+# Higher depth = more complex reasoning chains
+# Tested: depth=10 works well with lower children (2-3)
+depth:
+  type: int
+  lower: 2
+  upper: 10
+
+# Number of children per node in tree DAG
+# Higher = wider trees, more information to process
+# Note: children=6+ causes very slow generation
+num_children_per_node:
+  type: int
+  lower: 2
+  upper: 4
+
+# Extra links per node (adds complexity beyond tree structure)
+# Note: high values slow generation significantly when combined with high depth
+extra_links_per_node:
+  type: int
+  lower: 0
+  upper: 4
+
+
+# Perturbation parameters (make problems harder)
+# Number of random (irrelevant) descriptions to add
+add_rand_desc:
+  type: int
+  lower: 0
+  upper: 3
+
+# Order of node descriptions
+# 1=topological, 2=reversed, 3=random
+order_id:
+  type: int
+  lower: 1
+  upper: 3

@@ -1,0 +1,15 @@
+# Knights and Knaves dataset search space for reasoning_gym
+# Logic/deduction: determine truth-tellers from liars based on statements
+
+n_people:
+  type: int
+  lower: 2
+  upper: 8
+depth_constraint:
+  type: int
+  lower: 1
+  upper: 4
+width_constraint:
+  type: int
+  lower: 1
+  upper: 4

@@ -1,0 +1,29 @@
+# Syllogism dataset search space for reasoning_gym
+# Categorical logic: evaluate syllogistic arguments
+
+parameters:
+  allow_all:
+    type: categorical
+    choices: [true, false]
+  allow_no:
+    type: categorical
+    choices: [true, false]
+  allow_some:
+    type: categorical
+    choices: [true, false]
+  allow_some_not:
+    type: categorical
+    choices: [true, false]
+  invalid_ratio:
+    type: float
+    lower: 0.0
+    upper: 1.0
+  inversion_probability:
+    type: float
+    lower: 0.0
+    upper: 0.5
+
+cache:
+  enabled: true
+  key_fields:
+    - scenario_id

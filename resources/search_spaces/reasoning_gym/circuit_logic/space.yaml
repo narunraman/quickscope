@@ -1,0 +1,21 @@
+# Circuit Logic dataset search space for reasoning_gym
+# Boolean reasoning: evaluate logic circuits with AND, OR, NOT gates
+
+
+min_terms:
+  type: int
+  lower: 2
+  upper: 8
+max_terms:
+  type: int
+  lower: 3
+  upper: 12
+min_inputs:
+  type: int
+  lower: 2
+  upper: 6
+max_inputs:
+  type: int
+  lower: 3
+  upper: 10
+

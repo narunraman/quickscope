@@ -1,0 +1,38 @@
+# Largest Island dataset search space for reasoning_gym
+# Find the largest connected component of 1s in a binary grid
+
+# Grid dimensions
+min_rows:
+  type: int
+  lower: 3
+  upper: 15
+max_rows:
+  type: int
+  lower: 5
+  upper: 25
+min_cols:
+  type: int
+  lower: 3
+  upper: 15
+max_cols:
+  type: int
+  lower: 5
+  upper: 25
+
+# Island generation parameters
+min_num_islands:
+  type: int
+  lower: 0
+  upper: 5
+max_num_islands:
+  type: int
+  lower: 1
+  upper: 10
+min_island_size:
+  type: int
+  lower: 0
+  upper: 5
+max_island_size:
+  type: int
+  lower: 3
+  upper: 20

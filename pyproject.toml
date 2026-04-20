@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quickscope"
+version = "0.1.0"
+description = "Bayesian-optimal LLM evaluation toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    {name = "Narun Raman", email = "narun.raman@gmail.com"},
+]
+dependencies = [
+    "anthropic>=0.76.0",
+    "configspace>=1.2.2",
+    "datasets>=2.15.0",
+    "matplotlib>=3.10.0",
+    "numpy>=1.26.4",
+    "openai>=2.15.0",
+    "pandas>=2.3.3",
+    "pydantic>=2.12.5",
+    "pyyaml>=6.0.2",
+    "reasoning-gym>=0.1.24",
+    "rich-click>=1.9.6",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.15.3",
+    "sympy>=1.14.0",
+    "xgboost>=3.1.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=26.1.0",
+    "pyright>=1.1.408",
+    "pytest>=9.0.2",
+]
+
+[tool.uv]
+override-dependencies = [
+    "openai>=2.15.0",
+    "huggingface-hub>=1.3.2",
+]
+
+[project.scripts]
+qscope = "quickscope.cli:main"
+quickscope = "quickscope.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["quickscope*", "resources*"]
+
+[tool.setuptools.package-data]
+"resources" = ["**/*.yaml", "**/*.py"]
