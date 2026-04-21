@@ -115,10 +115,14 @@ See [`quickscope/simulation/README.md`](quickscope/simulation/README.md) for a g
 If you use QuickScope in your research, please cite:
 
 ```bibtex
-@inproceedings{quickscope2026,
-  title     = {QuickScope: Certifying Hard Questions in Dynamic LLM Benchmarks},
-  author    = {Raman, Narun and others},
-  year      = {2026},
+@misc{lundy2026quickscope,
+      title={QuickScope: Certifying Hard Questions in Dynamic LLM Benchmarks}, 
+      author={Taylor Lundy and Narun K. Raman and Kevin Leyton-Brown},
+      year={2026},
+      eprint={2604.17842},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2604.17842}, 
 }
 ```
 
