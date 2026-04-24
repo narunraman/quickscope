@@ -10,6 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script src="./data.js"></script>
     <script src="./assets/results-data.js"></script>
+    <script>
+      (() => {
+        let savedTheme = null;
+        try {
+          savedTheme = localStorage.getItem("quickscope-theme");
+        } catch {
+          savedTheme = null;
+        }
+        const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme = savedTheme || (prefersLight ? "light" : "dark");
+      })();
+    </script>
     <style>
       @font-face {
         font-family: "Amalgama";
@@ -31,20 +43,55 @@
       }
 
       :root {
-        --ink: #f2f0f8;
-        --muted: #aaa3b8;
-        --paper: #121116;
-        --soft: #1b1922;
-        --panel: #18161d;
-        --line: #353141;
-        --accent: #b985ff;
-        --accent-strong: #d7bdff;
+        --ink: #eff5ea;
+        --ink-rgb: 239, 245, 234;
+        --muted: #a7b5a2;
+        --paper: #0d120d;
+        --soft: #131b13;
+        --panel: #101710;
+        --line: #2b3a2b;
+        --accent: #8ea65f;
+        --accent-rgb: 142, 166, 95;
+        --accent-strong: #c2d27a;
+        --accent-strong-rgb: 194, 210, 122;
+        --code: #090d09;
+        --code-ink: #dfead7;
+        --track: #232d20;
+        --tooltip-bg: rgba(13, 18, 13, 0.94);
+        --button-ink: #081008;
+        --byline: #83927e;
+        --byline-link: #9fb18f;
+        --contour-opacity: 0.16;
         --red: #f06d5f;
         --green: #6fcf91;
         --blue: #6ea8ff;
+        --blue-rgb: 110, 168, 255;
         --orange: #e7a858;
         --wordmark-font: "Hitmarker";
+        --display-font: "Hitmarker Text";
         --body-font: Poppins;
+      }
+
+      [data-theme="light"] {
+        --ink: #172015;
+        --ink-rgb: 23, 32, 21;
+        --muted: #596653;
+        --paper: #f4f1e7;
+        --soft: #ebe7da;
+        --panel: #fffaf0;
+        --line: #c9d0bd;
+        --accent: #607848;
+        --accent-rgb: 96, 120, 72;
+        --accent-strong: #3f5f2a;
+        --accent-strong-rgb: 63, 95, 42;
+        --code: #f8f3e7;
+        --code-ink: #263520;
+        --track: #dbe2ce;
+        --tooltip-bg: rgba(255, 250, 240, 0.96);
+        --button-ink: #f8f3e7;
+        --byline: #65735f;
+        --byline-link: #4d663a;
+        --contour-opacity: 0.18;
       }
 
       * {
@@ -53,14 +100,32 @@
 
       body {
         margin: 0;
-        background:
-          linear-gradient(180deg, rgba(185, 133, 255, 0.08), transparent 360px),
-          var(--paper);
+        background: var(--paper);
         color: var(--ink);
         font-family:
           var(--body-font), Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
           "Segoe UI", sans-serif;
         line-height: 1.52;
+        min-height: 100vh;
+        position: relative;
+      }
+
+      body::before {
+        background-image: url("./assets/topography.svg");
+        background-position: top left;
+        background-repeat: repeat;
+        background-size: 600px 600px;
+        content: "";
+        inset: 0;
+        opacity: var(--contour-opacity);
+        pointer-events: none;
+        position: fixed;
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
       }
 
       button,
@@ -85,9 +150,6 @@
       }
 
       .hero {
-        background:
-          radial-gradient(circle at 82% 22%, rgba(185, 133, 255, 0.18), transparent 22rem),
-          linear-gradient(135deg, #181620 0%, #121116 58%);
         border-bottom: 1px solid var(--line);
         margin-left: calc(50% - 50vw);
         padding: 42px max(16px, calc((100vw - 1180px) / 2)) 36px;
@@ -133,7 +195,7 @@
 
       .scope-letter::before,
       .scope-letter::after {
-        background: #c2afdf;
+        background: var(--accent-strong);
         content: "";
         left: 50%;
         position: absolute;
@@ -157,9 +219,45 @@
       }
 
       .hero-links {
-        display: grid;
+        align-items: center;
+        display: flex;
         gap: 14px;
-        min-width: 112px;
+      }
+
+      .hero-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        justify-content: flex-end;
+      }
+
+      .theme-toggle {
+        align-items: center;
+        background: rgba(var(--accent-rgb), 0.1);
+        border: 1px solid rgba(var(--accent-rgb), 0.5);
+        border-radius: 999px;
+        color: var(--accent-strong);
+        display: inline-flex;
+        font-size: 0.78rem;
+        font-weight: 800;
+        gap: 8px;
+        letter-spacing: 0.04em;
+        padding: 0.45rem 0.72rem;
+        text-transform: uppercase;
+      }
+
+      .theme-toggle:hover {
+        background: rgba(var(--accent-rgb), 0.18);
+        color: var(--ink);
+      }
+
+      .theme-toggle-mark {
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: inset -4px -3px 0 rgba(var(--ink-rgb), 0.28);
+        height: 0.86rem;
+        width: 0.86rem;
       }
 
       .hero-link {
@@ -167,13 +265,48 @@
         color: var(--ink);
         display: inline-flex;
         font-size: 1rem;
-        font-weight: 700;
+        font-weight: 500;
         gap: 10px;
+        padding: 0.45rem 0;
+        position: relative;
         text-decoration: none;
       }
 
-      .hero-link:hover {
+      .hero-link-text {
+        line-height: 1;
+        position: relative;
+      }
+
+      .hero-link-text::after {
+        border-left: 2px solid var(--accent-strong);
+        border-top: 2px solid var(--accent-strong);
+        bottom: -0.78rem;
+        content: "";
+        height: 7px;
+        left: 50%;
+        opacity: 0;
+        position: absolute;
+        transform: translate(-50%, 2px) rotate(45deg);
+        transition:
+          opacity 140ms ease,
+          transform 140ms ease;
+        width: 7px;
+      }
+
+      .hero-link:hover,
+      .hero-link:focus-visible {
+        color: var(--ink);
+      }
+
+      .hero-link:hover .hero-link-text,
+      .hero-link:focus-visible .hero-link-text {
         color: var(--accent-strong);
+      }
+
+      .hero-link:hover .hero-link-text::after,
+      .hero-link:focus-visible .hero-link-text::after {
+        opacity: 1;
+        transform: translate(-50%, 0) rotate(45deg);
       }
 
       .hero-link svg,
@@ -188,15 +321,15 @@
       }
 
       .byline {
-        color: #81768f;
+        color: var(--byline);
         font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
         font-size: 0.96rem;
         margin: -0.25rem 0 0;
       }
 
       .byline a {
-        color: #9c8daf;
-        text-decoration-color: rgba(185, 133, 255, 0.4);
+        color: var(--byline-link);
+        text-decoration-color: rgba(var(--accent-rgb), 0.4);
       }
 
       .byline a:hover {
@@ -205,6 +338,7 @@
 
       .eyebrow {
         color: var(--accent-strong);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 0.82rem;
         font-weight: 750;
         letter-spacing: 0;
@@ -220,7 +354,7 @@
       }
 
       h1 {
-        font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 3.15rem;
         letter-spacing: 0;
         line-height: 1.05;
@@ -229,6 +363,7 @@
       }
 
       h2 {
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 2.25rem;
         letter-spacing: 0;
         line-height: 1.08;
@@ -236,23 +371,29 @@
       }
 
       h3 {
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 1.05rem;
         margin-bottom: 0.35rem;
       }
 
       .lead {
         color: var(--muted);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 1.25rem;
         max-width: 74ch;
       }
 
       .hero .lead {
-        font-family: "Hitmarker Text", Poppins, ui-sans-serif, sans-serif;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
       }
 
       .lead a {
         color: var(--accent-strong);
-        text-decoration-color: rgba(185, 133, 255, 0.55);
+        text-decoration-color: rgba(var(--accent-rgb), 0.55);
+      }
+
+      .lead a.reference-link {
+        text-decoration: none;
       }
 
       .cards,
@@ -312,6 +453,7 @@
       }
 
       .score-panel h3 {
+        font-family: var(--body-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 0.88rem;
         margin-bottom: 0.7rem;
       }
@@ -343,7 +485,7 @@
       }
 
       .score-track {
-        background: #2b2735;
+        background: var(--track);
         height: 6px;
         overflow: hidden;
       }
@@ -371,11 +513,11 @@
       }
 
       .code-panel {
-        background: #0f0e13;
+        background: var(--code);
       }
 
       .code-block {
-        color: #d9d3e8;
+        color: var(--code-ink);
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 0.78rem;
         line-height: 1.48;
@@ -405,11 +547,11 @@
       }
 
       .syntax-variable {
-        color: #d9d3e8;
+        color: var(--code-ink);
       }
 
       .question-card {
-        background: #17151d;
+        background: var(--soft);
         border: 1px solid var(--line);
         border-radius: 5px;
         color: var(--ink);
@@ -427,11 +569,12 @@
       }
 
       .dynamic-panel-header h3 {
+        font-family: var(--body-font), Poppins, ui-sans-serif, sans-serif;
         margin-bottom: 0;
       }
 
       .stage-label {
-        border: 1px solid rgba(185, 133, 255, 0.45);
+        border: 1px solid rgba(var(--accent-rgb), 0.45);
         border-radius: 999px;
         color: var(--accent-strong);
         flex: 0 0 auto;
@@ -467,6 +610,7 @@
 
       .visual-bridge {
         color: var(--muted);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 0.98rem;
         margin: 1rem 0 0;
         max-width: 78ch;
@@ -479,6 +623,7 @@
 
       .compact-copy {
         color: var(--muted);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 0.88rem;
         margin-bottom: 0.75rem;
       }
@@ -509,36 +654,41 @@
 
       .dot-field span {
         aspect-ratio: 1;
-        border-radius: 50%;
+        border: 1px solid rgba(var(--ink-rgb), 0.08);
+        border-radius: 2px;
+        background: rgba(var(--ink-rgb), 0.13);
       }
 
       .dot-field .d0 {
-        background: #5577b8;
+        background: #f3d97a;
       }
 
       .dot-field .d1 {
-        background: #6d8fc0;
+        background: #edba63;
       }
 
       .dot-field .d2 {
-        background: #8f8798;
+        background: #e99458;
       }
 
       .dot-field .d3 {
-        background: #d89162;
+        background: #dc6f61;
       }
 
       .dot-field .d4 {
         background: var(--red);
       }
 
-      .dot-field .sampled {
-        box-shadow: 0 0 0 2px rgba(215, 189, 255, 0.55);
+      .dot-field .sampled-1 {
+        box-shadow: 0 0 0 1px rgba(var(--blue-rgb), 0.74);
       }
 
-      .dot-field .focus {
-        box-shadow: 0 0 0 2px rgba(242, 240, 248, 0.65);
-        transform: scale(1.08);
+      .dot-field .sampled-2 {
+        box-shadow: 0 0 0 2px rgba(var(--blue-rgb), 0.82);
+      }
+
+      .dot-field .sampled-3 {
+        box-shadow: 0 0 0 3px rgba(var(--blue-rgb), 0.9);
       }
 
       .filters {
@@ -584,8 +734,8 @@
       }
 
       .chart-tooltip {
-        background: rgba(18, 17, 22, 0.94);
-        border: 1px solid rgba(185, 133, 255, 0.5);
+        background: var(--tooltip-bg);
+        border: 1px solid rgba(var(--accent-rgb), 0.5);
         border-radius: 6px;
         color: var(--ink);
         display: none;
@@ -599,6 +749,7 @@
 
       .chart-tooltip strong {
         display: block;
+        font-family: var(--body-font), Poppins, ui-sans-serif, sans-serif;
         margin-bottom: 0.35rem;
       }
 
@@ -673,7 +824,7 @@
         margin: 0 -0.95rem -0.95rem;
         max-height: 540px;
         overflow: auto;
-        scrollbar-color: rgba(185, 133, 255, 0.6) #0f0e13;
+        scrollbar-color: rgba(var(--accent-rgb), 0.6) var(--code);
         scrollbar-width: thin;
       }
 
@@ -683,17 +834,17 @@
       }
 
       .side-scroll::-webkit-scrollbar-track {
-        background: #0f0e13;
+        background: var(--code);
       }
 
       .side-scroll::-webkit-scrollbar-thumb {
-        background: rgba(185, 133, 255, 0.55);
-        border: 2px solid #0f0e13;
+        background: rgba(var(--accent-rgb), 0.55);
+        border: 2px solid var(--code);
         border-radius: 999px;
       }
 
       .side-scroll::-webkit-scrollbar-thumb:hover {
-        background: rgba(215, 189, 255, 0.8);
+        background: rgba(var(--accent-strong-rgb), 0.8);
       }
 
       .side-scroll table {
@@ -747,7 +898,7 @@
       .config-toggle {
         align-items: center;
         background: transparent;
-        border: 1px solid rgba(185, 133, 255, 0.46);
+        border: 1px solid rgba(var(--accent-rgb), 0.46);
         border-radius: 50%;
         color: var(--accent-strong);
         display: inline-flex;
@@ -764,7 +915,7 @@
       }
 
       .config-detail {
-        background: #0f0e13;
+        background: var(--code);
         border: 1px solid var(--line);
         border-radius: 5px;
         color: var(--muted);
@@ -816,7 +967,7 @@
         border: 1px solid var(--accent);
         border-radius: 5px;
         background: var(--accent);
-        color: #15121c;
+        color: var(--button-ink);
         padding: 0.55rem 0.8rem;
       }
 
@@ -846,6 +997,7 @@
 
       .algorithm-card p {
         color: var(--muted);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         margin-bottom: 0;
       }
 
@@ -949,7 +1101,7 @@
         }
 
         .flow-step.is-active {
-          background: rgba(185, 133, 255, 0.16);
+          background: rgba(var(--accent-rgb), 0.16);
           color: var(--accent-strong);
         }
 
@@ -981,7 +1133,7 @@
 
         .dynamic-panel-header::before {
           align-items: center;
-          border: 1px solid rgba(185, 133, 255, 0.45);
+          border: 1px solid rgba(var(--accent-rgb), 0.45);
           border-radius: 999px;
           color: var(--accent-strong);
           display: inline-flex;
@@ -1030,9 +1182,13 @@
           display: block;
         }
 
-        .hero-links {
+        .hero-actions {
           justify-content: flex-start;
           margin-bottom: 1.1rem;
+        }
+
+        .hero-links {
+          justify-content: flex-start;
         }
 
         .wordmark {
@@ -1095,18 +1251,24 @@
         <div class="hero-inner">
           <div class="hero-top">
             <p class="wordmark">Quick<span>Sc</span><span class="scope-letter">o</span><span>pe</span></p>
-            <nav class="hero-links" aria-label="Project links">
-              <a class="hero-link" href="https://github.com/narunraman/quickscope">
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path fill="currentColor" d="M8 0.2a8 8 0 0 0-2.53 15.59c0.4 0.07 0.55-0.17 0.55-0.38v-1.48c-2.24 0.49-2.71-0.95-2.71-0.95-0.37-0.93-0.9-1.18-0.9-1.18-0.73-0.5 0.06-0.49 0.06-0.49 0.81 0.06 1.24 0.83 1.24 0.83 0.72 1.23 1.88 0.88 2.34 0.67 0.07-0.52 0.28-0.88 0.51-1.08-1.79-0.2-3.67-0.89-3.67-3.98 0-0.88 0.31-1.6 0.83-2.16-0.08-0.2-0.36-1.02 0.08-2.13 0 0 0.68-0.22 2.21 0.82A7.7 7.7 0 0 1 8 4.02c0.68 0 1.36 0.09 1.99 0.27 1.53-1.04 2.21-0.82 2.21-0.82 0.44 1.11 0.16 1.93 0.08 2.13 0.52 0.56 0.83 1.28 0.83 2.16 0 3.09-1.88 3.77-3.67 3.97 0.29 0.25 0.54 0.74 0.54 1.49v2.2c0 0.21 0.15 0.46 0.55 0.38A8 8 0 0 0 8 0.2Z" />
-                </svg>
-                Code
-              </a>
-              <a class="hero-link" href="https://arxiv.org/abs/2604.17842">
-                <img src="./assets/arxiv-logomark-small.svg" alt="" aria-hidden="true" />
-                arXiv
-              </a>
-            </nav>
+            <div class="hero-actions">
+              <nav class="hero-links" aria-label="Project links">
+                <a class="hero-link" href="https://github.com/narunraman/quickscope">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path fill="currentColor" d="M8 0.2a8 8 0 0 0-2.53 15.59c0.4 0.07 0.55-0.17 0.55-0.38v-1.48c-2.24 0.49-2.71-0.95-2.71-0.95-0.37-0.93-0.9-1.18-0.9-1.18-0.73-0.5 0.06-0.49 0.06-0.49 0.81 0.06 1.24 0.83 1.24 0.83 0.72 1.23 1.88 0.88 2.34 0.67 0.07-0.52 0.28-0.88 0.51-1.08-1.79-0.2-3.67-0.89-3.67-3.98 0-0.88 0.31-1.6 0.83-2.16-0.08-0.2-0.36-1.02 0.08-2.13 0 0 0.68-0.22 2.21 0.82A7.7 7.7 0 0 1 8 4.02c0.68 0 1.36 0.09 1.99 0.27 1.53-1.04 2.21-0.82 2.21-0.82 0.44 1.11 0.16 1.93 0.08 2.13 0.52 0.56 0.83 1.28 0.83 2.16 0 3.09-1.88 3.77-3.67 3.97 0.29 0.25 0.54 0.74 0.54 1.49v2.2c0 0.21 0.15 0.46 0.55 0.38A8 8 0 0 0 8 0.2Z" />
+                  </svg>
+                  <span class="hero-link-text">Code</span>
+                </a>
+                <a class="hero-link" href="https://arxiv.org/abs/2604.17842">
+                  <img src="./assets/arxiv-logomark-small.svg" alt="" aria-hidden="true" />
+                  <span class="hero-link-text">arXiv</span>
+                </a>
+              </nav>
+              <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">
+                <span class="theme-toggle-mark" aria-hidden="true"></span>
+                <span id="theme-toggle-label">Light</span>
+              </button>
+            </div>
           </div>
           <div>
             <h1 id="headline"></h1>
@@ -1178,12 +1340,12 @@
             </div>
             <div class="sampling-block">
               <p class="eyebrow">Budget allocation</p>
-              <p class="compact-copy">Color marks difficulty. Rings mark sampled regions. QuickScope spends more calls where repeated samples keep looking hard.</p>
+              <p class="compact-copy">Grey cells are unsampled. Outlined cells use yellow-to-red fill for observed hardness; thicker blue outlines mean more samples spent there.</p>
               <div class="sampling-compare">
                 <article class="sampling-panel">
                   <h3>Uniform sampling</h3>
                   <div class="dot-field" id="uniform-dots"></div>
-                  <p class="muted">Samples broadly, so hard regions often get only one or two looks.</p>
+                  <p class="muted">Samples are spread evenly, so hard regions often get only one or two looks.</p>
                 </article>
                 <article class="sampling-panel">
                   <h3>QuickScope</h3>
@@ -1202,7 +1364,7 @@
           Searching a dynamic benchmark is only well-defined once you decide what
           you care about: raw error, error relative to complexity, robustness to a
           perturbation, or some other utility. QuickScope uses
-          <a href="https://arxiv.org/abs/2510.14683">COUP</a>, an algorithm for
+          COUP<a class="reference-link" href="https://arxiv.org/abs/2510.14683"><sup>⊕</sup></a>, an algorithm for
           optimizing user-defined utilities over large configuration spaces, then
           retools it for modern LLM evaluation pipelines: batched model calls,
           aggregate utilities, and hardness certification.
@@ -1302,30 +1464,48 @@
           }],
         }));
       }
-      const colors = {
-        ink: "#f2f0f8",
-        muted: "#aaa3b8",
-        paper: "#121116",
-        panel: "#18161d",
-        line: "#353141",
-        red: "#f06d5f",
-        green: "#6fcf91",
-        blue: "#6ea8ff",
-        orange: "#e7a858",
-        accent: "#b985ff",
-      };
+      function cssColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      }
 
-      const methodColors = [
-        colors.accent,
-        colors.green,
-        colors.orange,
-        colors.blue,
-        colors.red,
-        colors.ink,
-      ];
+      function readThemeColors() {
+        return {
+          ink: cssColor("--ink"),
+          muted: cssColor("--muted"),
+          paper: cssColor("--paper"),
+          panel: cssColor("--panel"),
+          line: cssColor("--line"),
+          red: cssColor("--red"),
+          green: cssColor("--green"),
+          blue: cssColor("--blue"),
+          orange: cssColor("--orange"),
+          accent: cssColor("--accent"),
+        };
+      }
+
+      let colors = readThemeColors();
+      let methodColors = getMethodColors();
+
+      function getMethodColors() {
+        return [
+          colors.accent,
+          colors.green,
+          colors.orange,
+          colors.blue,
+          colors.red,
+          colors.ink,
+        ];
+      }
+
+      const defaultComparison =
+        page.comparisons.find((comparison) =>
+          comparison.benchmark === "DyVal" &&
+          comparison.model === "gpt-5.4-nano" &&
+          comparison.utility === "error-rate"
+        ) || page.comparisons[0];
 
       const state = {
-        comparison: page.comparisons[0],
+        comparison: defaultComparison,
         topK: 40,
         hoverK: null,
         hoverMethod: null,
@@ -1343,6 +1523,31 @@
       };
       const configCount = document.getElementById("config-count");
       const configCountValue = document.getElementById("config-count-value");
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeToggleLabel = document.getElementById("theme-toggle-label");
+
+      function applyTheme(theme, persist = true) {
+        document.documentElement.dataset.theme = theme;
+        themeToggleLabel.textContent = theme === "dark" ? "Light" : "Dark";
+        themeToggle.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`);
+        if (persist) {
+          try {
+            localStorage.setItem("quickscope-theme", theme);
+          } catch {
+            // Theme still changes for the current page when storage is unavailable.
+          }
+        }
+        colors = readThemeColors();
+        methodColors = getMethodColors();
+        if (state.comparison) renderComparison();
+      }
+
+      themeToggle.addEventListener("click", () => {
+        const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+        applyTheme(current === "dark" ? "light" : "dark");
+      });
+
+      applyTheme(document.documentElement.dataset.theme || "dark", false);
 
       document.getElementById("headline").textContent = page.headline;
       document.getElementById("subhead").textContent = page.subhead;
@@ -1421,31 +1626,71 @@
           metrics.appendChild(node);
         });
 
+        const uniformSampled = new Set([0, 3, 6, 10, 13, 16, 20, 23, 26, 30, 33, 36, 40, 43, 46, 50, 53, 56, 8, 18, 38, 58]);
+
+        function shuffled(values) {
+          const copy = [...values];
+          for (let index = copy.length - 1; index > 0; index -= 1) {
+            const swapIndex = Math.floor(Math.random() * (index + 1));
+            [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+          }
+          return copy;
+        }
+
+        function makeUniformDifficulties() {
+          const difficulties = Array(60).fill(0);
+          const sampled = shuffled(uniformSampled);
+          const values = [3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0];
+          sampled.forEach((cell, index) => {
+            difficulties[cell] = values[index] || 0;
+          });
+          return difficulties;
+        }
+
+        function makeAdaptivePlan() {
+          const columns = 12;
+          const row = 1 + Math.floor(Math.random() * 3);
+          const column = 2 + Math.floor(Math.random() * 8);
+          const center = row * columns + column;
+          const cluster = shuffled([
+            center,
+            center - 1,
+            center + 1,
+            center - columns,
+            center + columns,
+            center + columns - 1,
+            center + columns + 1,
+          ].filter((cell) => cell >= 0 && cell < 60));
+          const exploratory = shuffled([0, 7, 11, 21, 24, 35, 43, 48, 52, 59]);
+          const sampled = new Set([...cluster, ...exploratory].slice(0, 16));
+          const resampled = new Set(cluster.slice(1, 5));
+          const heavilySampled = new Set(cluster.slice(0, 2));
+          const difficulties = Array(60).fill(0);
+          cluster.forEach((cell, index) => {
+            difficulties[cell] = index < 2 ? 4 : index < 5 ? 3 : 2;
+          });
+          exploratory.slice(0, 5).forEach((cell) => {
+            if (!difficulties[cell]) difficulties[cell] = Math.random() > 0.45 ? 2 : 1;
+          });
+          return { difficulties, sampled, resampled, heavilySampled };
+        }
+
+        const uniformDifficulties = makeUniformDifficulties();
+        const adaptivePlan = makeAdaptivePlan();
+
         function fillDots(id, adaptive) {
           const target = document.getElementById(id);
           target.innerHTML = "";
-          const uniformDifficulties = [
-            0, 1, 1, 2, 0, 1, 2, 1, 1, 0, 2, 1,
-            1, 2, 0, 1, 3, 4, 2, 1, 2, 0, 1, 2,
-            0, 1, 2, 2, 3, 2, 1, 1, 0, 2, 1, 2,
-            1, 0, 2, 2, 3, 4, 2, 1, 1, 0, 2, 1,
-            0, 1, 2, 1, 2, 2, 1, 0, 2, 1, 0, 2,
-          ];
-          const adaptiveDifficulties = [
-            0, 1, 1, 2, 0, 1, 2, 3, 1, 0, 2, 1,
-            1, 2, 0, 3, 4, 4, 3, 1, 2, 0, 1, 2,
-            0, 2, 3, 4, 4, 4, 3, 1, 0, 2, 1, 2,
-            1, 0, 2, 3, 4, 4, 3, 2, 1, 0, 2, 1,
-            0, 1, 2, 1, 3, 2, 1, 0, 2, 1, 0, 3,
-          ];
-          const difficulties = adaptive ? adaptiveDifficulties : uniformDifficulties;
-          const uniformSampled = new Set([0, 3, 7, 11, 14, 18, 20, 24, 27, 31, 34, 38, 43, 45, 48, 52, 55, 59]);
-          const adaptiveSampled = new Set([0, 7, 16, 17, 18, 27, 28, 29, 30, 31, 40, 41, 42, 43, 52, 59]);
-          const focus = new Set([16, 17, 18, 28, 29, 30, 40, 41, 42]);
+          const difficulties = adaptive ? adaptivePlan.difficulties : uniformDifficulties;
+          const sampledSet = adaptive ? adaptivePlan.sampled : uniformSampled;
           for (let index = 0; index < 60; index += 1) {
             const dot = document.createElement("span");
-            const sampled = adaptive ? adaptiveSampled.has(index) : uniformSampled.has(index);
-            dot.className = `d${difficulties[index]}${sampled ? " sampled" : ""}${adaptive && focus.has(index) ? " focus" : ""}`;
+            const sampled = sampledSet.has(index);
+            const sampleCount = !sampled ? 0 :
+              adaptive && adaptivePlan.heavilySampled.has(index) ? 3 :
+              adaptive && adaptivePlan.resampled.has(index) ? 2 :
+              1;
+            dot.className = sampled ? `d${difficulties[index]} sampled-${sampleCount}` : "";
             target.appendChild(dot);
           }
         }
@@ -1563,27 +1808,34 @@
         const rows = document.getElementById("side-configs");
         rows.innerHTML = "";
         let detailId = 0;
-        comparison.methods.forEach((method) => {
-          method.topConfigs.forEach((config) => {
-            detailId += 1;
-            const rowId = `config-detail-${detailId}`;
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${config.rank}</td>
+        const rankedConfigs = comparison.methods
+          .flatMap((method) => method.topConfigs.map((config) => ({ method, config })))
+          .sort((left, right) => {
+            const meanDelta = Number(right.config.mean) - Number(left.config.mean);
+            if (meanDelta) return meanDelta;
+            const lcbDelta = Number(right.config.lcb ?? -Infinity) - Number(left.config.lcb ?? -Infinity);
+            if (lcbDelta) return lcbDelta;
+            return left.method.label.localeCompare(right.method.label) || left.config.name.localeCompare(right.config.name);
+          });
+        rankedConfigs.forEach(({ method, config }, index) => {
+          detailId += 1;
+          const rowId = `config-detail-${detailId}`;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+              <td>${index + 1}</td>
               <td>${method.label}</td>
               <td>${Number(config.mean).toFixed(2)}</td>
               <td>
                 <button class="config-toggle" aria-expanded="false" aria-controls="${rowId}" title="${escapeHtml(config.name)}">?</button>
               </td>
             `;
-            rows.appendChild(tr);
-            const detail = document.createElement("tr");
-            detail.className = "config-detail-row";
-            detail.id = rowId;
-            detail.hidden = true;
-            detail.innerHTML = `<td colspan="4"><p class="config-detail">${escapeHtml(config.name)}</p></td>`;
-            rows.appendChild(detail);
-          });
+          rows.appendChild(tr);
+          const detail = document.createElement("tr");
+          detail.className = "config-detail-row";
+          detail.id = rowId;
+          detail.hidden = true;
+          detail.innerHTML = `<td colspan="4"><p class="config-detail">${escapeHtml(config.name)}</p></td>`;
+          rows.appendChild(detail);
         });
 
         drawChart();
@@ -1731,7 +1983,7 @@
         });
 
         const x = scale(topK, area.minX, area.maxX, area.left, area.right);
-        ctx.strokeStyle = "rgba(242, 240, 248, 0.45)";
+        ctx.strokeStyle = hexToRgba(colors.ink, 0.45);
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, area.top);
@@ -1740,7 +1992,7 @@
 
         const markerK = state.hoverK || topK;
         const markerX = scale(markerK, area.minX, area.maxX, area.left, area.right);
-        ctx.strokeStyle = state.hoverK ? "rgba(242, 240, 248, 0.72)" : "rgba(242, 240, 248, 0.22)";
+        ctx.strokeStyle = hexToRgba(colors.ink, state.hoverK ? 0.72 : 0.22);
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(markerX, area.top);
