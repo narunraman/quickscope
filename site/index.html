@@ -1470,19 +1470,52 @@
         font-variant-numeric: tabular-nums;
       }
 
-      .results-legend {
-        color: var(--muted);
+      .results-legend-row {
+        align-items: center;
         display: flex;
         flex-wrap: wrap;
-        font-size: 0.74rem;
-        gap: 0.3rem 1rem;
+        gap: 0.5rem 1.2rem;
+        justify-content: space-between;
         margin-bottom: 0.6rem;
       }
 
-      .results-legend span {
+      .results-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem 0.4rem;
+      }
+
+      /* Legend entries are buttons: hover highlights, click hides or shows. */
+      .results-legend button {
         align-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        color: var(--muted);
         display: inline-flex;
+        font-size: 0.74rem;
         gap: 0.4rem;
+        padding: 0.2rem 0.35rem;
+      }
+
+      .results-legend button:hover {
+        background: rgba(var(--ink-rgb), 0.06);
+        color: var(--ink);
+      }
+
+      .results-legend button[aria-pressed="false"] {
+        opacity: 0.4;
+        text-decoration: line-through;
+      }
+
+      .results-legend button:focus-visible {
+        outline: 2px solid var(--accent-strong);
+        outline-offset: 1px;
+      }
+
+      .results-tip div.is-focus {
+        color: var(--ink);
+        font-weight: 600;
       }
 
       .results-legend i {
@@ -1937,7 +1970,14 @@
               <canvas id="results-chart" aria-label="Results by budget"></canvas>
               <div class="results-tip" id="results-tip" hidden></div>
             </div>
-            <div class="results-legend" id="results-legend" aria-hidden="true"></div>
+            <div class="results-legend-row">
+              <div class="results-legend" id="results-legend" role="group" aria-label="Series: click to hide or show, double-click to show one alone"></div>
+              <label class="truth-switch" for="split-toggle">
+                <input id="split-toggle" type="checkbox" />
+                <span class="truth-track" aria-hidden="true"></span>
+                <span class="truth-label">Each variant</span>
+              </label>
+            </div>
             <p class="coverage-note" id="results-coverage" hidden></p>
             <p class="coverage-note" id="results-bench-note" hidden></p>
             <p class="muted" id="results-caption"></p>
@@ -2583,22 +2623,24 @@
         high_explored: {
           label: "Hard found",
           title: "Hard configurations found",
-          caption: (tau) => `How many configurations each method sampled whose held-out error rate is at least ${tau}.`,
+          caption: (tau) => `Configurations each method sampled whose held-out error rate is at least ${tau}.`,
           format: (v) => Math.round(v).toLocaleString(),
         },
         topk_true: {
           label: "Top 10 that hold up",
           title: "Top 10 that are really hard",
-          caption: (tau) => `Of the ten configurations each method ranks hardest, how many really have a held-out error rate of at least ${tau}.`,
+          caption: (tau) => `Of each method's ten hardest-looking configurations, how many really have an error rate of at least ${tau}.`,
           format: (v) => `${Math.round(v)} / 10`,
-          max: 10,
+          range: () => [0, 10],
         },
         topk_gt_mean: {
           label: "Error of top 10",
           title: "True error rate of the top 10",
-          caption: () => "The held-out error rate of the ten configurations each method ranks hardest.",
-          format: (v) => v.toFixed(2),
-          max: 1,
+          caption: () => "Held-out error rate of each method's ten hardest-looking configurations.",
+          format: (v) => v.toFixed(3),
+          // Zoom to the data: these rates bunch near the top, and a 0-1 axis would flatten them.
+          range: (lo, hi) => [Math.max(0, Math.floor((lo - 0.01) * 20) / 20), Math.min(1, Math.ceil((hi + 0.005) * 20) / 20)],
+          ticks: (v) => v.toFixed(2),
         },
       };
       const BASELINE_STYLE = {
@@ -2608,29 +2650,44 @@
         apt: { label: "APT", color: "--m-apt" },
         smac_ac: { label: "SMAC", color: "--m-smac" },
       };
+      // The QuickScope variants, drawn as one band or, split, as their own lines.
+      const VARIANT_STYLE = {
+        coup_nocert: { label: "No cert", dash: [] },
+        coup_cert: { label: "Cert", dash: [6, 4] },
+        coup_adaptive: { label: "Adaptive cert", dash: [2, 3] },
+      };
       // What a reader should know about a benchmark before comparing lines on it.
       const RESULT_BENCH_NOTES = {
-        steer_me: "STEER-ME's space is small, so every method eventually finds its hard configurations, and the cheap baselines get there quickly. This is the small-space case from the budget comparison above.",
+        steer_me: "STEER-ME's space is small enough that every method finds its hard configurations.",
       };
       // Benchmark keys in the budget file, and their names in the older run data used for the found list.
       const RESULT_BENCH_NAMES = { dyval: "DyVal", steer_me: "STEER-ME", grid: "Grid Reasoning" };
-      var resultsView = { model: null, bench: null, metric: "high_explored", area: null, hover: null };
+      var resultsView = {
+        model: null, bench: null, metric: "high_explored", area: null,
+        hover: null, focus: null, hidden: new Set(), split: false,
+      };
 
+      // Every series for the current model, benchmark and measure, visible or not.
       function resultSeries() {
         const data = window.QUICKSCOPE_BUDGET;
         const rows = data.rows.filter((row) =>
           row.model === resultsView.model && row.benchmark === resultsView.bench && row[resultsView.metric] != null);
         const budgets = [...new Set(rows.map((row) => row.budget))].sort((a, b) => a - b);
+        const pointsOf = (method) => rows.filter((row) => row.method === method)
+          .sort((a, b) => a.budget - b.budget).map((row) => ({ budget: row.budget, value: row[resultsView.metric] }));
         const band = budgets.map((budget) => {
           const values = rows.filter((row) => row.budget === budget && data.quickscope.includes(row.method)).map((row) => row[resultsView.metric]);
           return values.length ? { budget, min: Math.min(...values), max: Math.max(...values) } : null;
         }).filter(Boolean);
-        const lines = data.baselines.map((method) => ({
-          method,
-          points: rows.filter((row) => row.method === method).sort((a, b) => a.budget - b.budget).map((row) => ({ budget: row.budget, value: row[resultsView.metric] })),
-        })).filter((line) => line.points.length);
-        return { budgets, band, lines, tau: rows[0]?.tau };
+        const variants = data.quickscope.map((method) => ({ key: method, points: pointsOf(method) })).filter((s) => s.points.length);
+        const lines = data.baselines.map((method) => ({ key: method, points: pointsOf(method) })).filter((s) => s.points.length);
+        return { budgets, band, variants, lines, tau: rows[0]?.tau };
       }
+
+      const isShown = (key) => !resultsView.hidden.has(key);
+      const seriesAlpha = (key) => (resultsView.focus && resultsView.focus !== key ? 0.18 : 1);
+      // The band and the split variants share one legend key, so they highlight and hide together.
+      const groupOf = (key) => (VARIANT_STYLE[key] ? "quickscope" : key);
 
       function drawResults() {
         const canvas = document.getElementById("results-chart");
@@ -2646,37 +2703,52 @@
         g.clearRect(0, 0, width, height);
 
         const metric = RESULT_METRICS[resultsView.metric];
-        const { budgets, band, lines } = resultSeries();
+        const { budgets, band, variants, lines } = resultSeries();
         if (!budgets.length) return;
         const labelRoom = width > 560 ? 118 : 16;
         const area = { left: 44, right: width - labelRoom, top: 12, bottom: height - 30 };
         const minX = Math.log10(budgets[0]);
         const maxX = Math.log10(budgets[budgets.length - 1]);
-        const values = [...band.map((p) => p.max), ...lines.flatMap((line) => line.points.map((p) => p.value))];
-        const maxY = metric.max ?? niceCeil(Math.max(...values));
+
+        // The y-axis fits whatever is visible, so hiding a series rescales the chart.
+        const values = [
+          ...(isShown("quickscope") ? (resultsView.split ? variants.flatMap((s) => s.points.map((p) => p.value)) : band.flatMap((p) => [p.min, p.max])) : []),
+          ...lines.filter((s) => isShown(s.key)).flatMap((s) => s.points.map((p) => p.value)),
+        ];
+        const lo = values.length ? Math.min(...values) : 0;
+        const hi = values.length ? Math.max(...values) : 1;
+        const [minY, maxY] = metric.range ? metric.range(lo, hi) : [0, niceCeil(hi)];
         const sx = (budget) => area.left + ((Math.log10(budget) - minX) / (maxX - minX || 1)) * (area.right - area.left);
-        const sy = (value) => area.bottom - (value / maxY) * (area.bottom - area.top);
-        resultsView.area = { ...area, sx, budgets };
+        const sy = (value) => area.bottom - ((value - minY) / (maxY - minY || 1)) * (area.bottom - area.top);
+        resultsView.area = { ...area, sx, sy, budgets };
 
         const ink = cssColor("--ink");
         const muted = cssColor("--muted");
-        const line = cssColor("--line");
         const accent = cssColor("--accent");
+        const accentStrong = cssColor("--accent-strong");
         g.font = "11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
         g.lineWidth = 1;
-        g.strokeStyle = line;
+        g.strokeStyle = cssColor("--line");
         g.fillStyle = muted;
         g.textAlign = "right";
-        const ticks = maxY === 10 ? 5 : 4;
-        for (let i = 0; i <= ticks; i += 1) {
-          const v = (maxY * i) / ticks;
+        // Round tick steps (e.g. 0.05, 2, 50) with four to six gridlines.
+        const span = maxY - minY || 1;
+        const step = [1, 2, 2.5, 5, 10].map((m) => m * 10 ** Math.floor(Math.log10(span / 5)))
+          .find((s) => span / s <= 6) || span / 4;
+        const tickValues = [];
+        for (let v = Math.ceil(minY / step - 1e-9) * step; v <= maxY + 1e-9; v += step) tickValues.push(v);
+        tickValues.forEach((v) => {
           const y = sy(v);
           g.beginPath();
           g.moveTo(area.left, y);
           g.lineTo(area.right, y);
           g.stroke();
-          g.fillText(metric.max === 1 ? v.toFixed(2) : Math.round(v).toLocaleString(), area.left - 6, y + 4);
-        }
+          g.fillText(metric.ticks ? metric.ticks(v) : Math.round(v).toLocaleString(), area.left - 6, y + 4);
+        });
+        g.beginPath();
+        g.moveTo(area.left, area.bottom);
+        g.lineTo(area.right, area.bottom);
+        g.stroke();
         g.textAlign = "center";
         // Label from the right so the final budget always shows; skip any label that would collide.
         let nextLeft = Infinity;
@@ -2693,42 +2765,63 @@
           g.fillText("model calls", area.right, height - 2);
         }
 
-        // QuickScope variants: one band from the weakest to the strongest variant.
-        g.beginPath();
-        band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.max)) : g.moveTo(sx(p.budget), sy(p.max))));
-        [...band].reverse().forEach((p) => g.lineTo(sx(p.budget), sy(p.min)));
-        g.closePath();
-        g.globalAlpha = 0.3;
-        g.fillStyle = accent;
-        g.fill();
-        g.globalAlpha = 1;
-        g.strokeStyle = accent;
-        g.lineWidth = 2;
-        ["max", "min"].forEach((key) => {
+        const path = (points, key = "value") => {
           g.beginPath();
-          band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p[key])) : g.moveTo(sx(p.budget), sy(p[key]))));
-          g.stroke();
-        });
-
+          points.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p[key])) : g.moveTo(sx(p.budget), sy(p[key]))));
+        };
         const ends = [];
-        lines.forEach(({ method, points }) => {
-          const color = cssColor(BASELINE_STYLE[method].color);
+
+        if (isShown("quickscope")) {
+          g.globalAlpha = seriesAlpha("quickscope");
+          if (resultsView.split) {
+            variants.forEach(({ key, points }) => {
+              g.strokeStyle = accentStrong;
+              g.lineWidth = resultsView.focus === "quickscope" ? 2.5 : 2;
+              g.setLineDash(VARIANT_STYLE[key].dash);
+              path(points);
+              g.stroke();
+              g.setLineDash([]);
+              const last = points[points.length - 1];
+              ends.push({ y: sy(last.value), label: VARIANT_STYLE[key].label, color: accentStrong, key: "quickscope", bold: true });
+            });
+          } else if (band.length) {
+            g.beginPath();
+            band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.max)) : g.moveTo(sx(p.budget), sy(p.max))));
+            [...band].reverse().forEach((p) => g.lineTo(sx(p.budget), sy(p.min)));
+            g.closePath();
+            g.fillStyle = accent;
+            g.globalAlpha = 0.3 * seriesAlpha("quickscope");
+            g.fill();
+            g.globalAlpha = seriesAlpha("quickscope");
+            g.strokeStyle = accent;
+            g.lineWidth = resultsView.focus === "quickscope" ? 2.5 : 2;
+            ["max", "min"].forEach((k) => {
+              path(band, k);
+              g.stroke();
+            });
+            const top = band[band.length - 1];
+            ends.push({ y: sy((top.min + top.max) / 2), label: "QuickScope", color: accentStrong, key: "quickscope", bold: true });
+          }
+          g.globalAlpha = 1;
+        }
+
+        lines.filter((s) => isShown(s.key)).forEach(({ key, points }) => {
+          const color = cssColor(BASELINE_STYLE[key].color);
+          g.globalAlpha = seriesAlpha(key);
           g.strokeStyle = color;
           g.fillStyle = color;
-          g.lineWidth = 1.5;
-          g.beginPath();
-          points.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.value)) : g.moveTo(sx(p.budget), sy(p.value))));
+          g.lineWidth = resultsView.focus === key ? 2.5 : 1.5;
+          path(points);
           g.stroke();
           points.forEach((p) => {
             g.beginPath();
             g.rect(sx(p.budget) - 2.5, sy(p.value) - 2.5, 5, 5);
             g.fill();
           });
+          g.globalAlpha = 1;
           const last = points[points.length - 1];
-          ends.push({ y: sy(last.value), label: BASELINE_STYLE[method].label, color });
+          ends.push({ y: sy(last.value), label: BASELINE_STYLE[key].label, color, key });
         });
-        const top = band[band.length - 1];
-        ends.push({ y: sy((top.min + top.max) / 2), label: "QuickScope", color: cssColor("--accent-strong"), bold: true });
 
         // Direct labels at the right, nudged apart so they never overlap.
         if (labelRoom > 20) {
@@ -2736,10 +2829,12 @@
           for (let i = 1; i < ends.length; i += 1) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 13);
           g.textAlign = "left";
           ends.forEach((end) => {
+            g.globalAlpha = seriesAlpha(end.key);
             g.fillStyle = end.color;
-            g.font = `${end.bold ? "600 " : ""}11px Poppins, ui-sans-serif, sans-serif`;
+            g.font = `${end.bold || resultsView.focus === end.key ? "600 " : ""}11px Poppins, ui-sans-serif, sans-serif`;
             g.fillText(end.label, area.right + 8, Math.min(height - 4, end.y + 4));
           });
+          g.globalAlpha = 1;
         }
 
         if (resultsView.hover != null) {
@@ -2776,19 +2871,25 @@
         return Math.ceil(value / step) * step;
       }
 
+      function renderLegend() {
+        const { lines } = resultSeries();
+        const items = [
+          { key: "quickscope", label: resultsView.split ? "QuickScope: No cert, Cert, Adaptive cert" : "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' },
+          ...lines.map(({ key }) => ({ key, label: BASELINE_STYLE[key].label, swatch: `<i style="background: var(${BASELINE_STYLE[key].color})"></i>` })),
+        ];
+        document.getElementById("results-legend").innerHTML = items.map((item) =>
+          `<button type="button" data-series="${item.key}" aria-pressed="${isShown(item.key)}">${item.swatch}${item.label}</button>`).join("");
+      }
+
       function renderResultsText() {
         const data = window.QUICKSCOPE_BUDGET;
         const metric = RESULT_METRICS[resultsView.metric];
         const { tau } = resultSeries();
         document.getElementById("results-placeholder").hidden = !data.placeholder;
         document.getElementById("results-title").textContent = metric.title;
-        document.getElementById("results-caption").textContent =
-          `${metric.caption(tau)} Budgets are in model calls; the band spans the QuickScope variants, all evaluating ${resultsView.model}.`;
+        document.getElementById("results-caption").textContent = metric.caption(tau);
+        renderLegend();
         const present = modelBaselines(resultsView.model);
-        document.getElementById("results-legend").innerHTML = [
-          `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
-          ...present.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
-        ].join("");
         const benchNote = document.getElementById("results-bench-note");
         benchNote.hidden = !RESULT_BENCH_NOTES[resultsView.bench];
         benchNote.textContent = RESULT_BENCH_NOTES[resultsView.bench] || "";
@@ -2800,7 +2901,7 @@
         coverage.hidden = !missing.length;
         if (missing.length) {
           const ran = present.map((method) => (method === "uniform" ? "uniform sampling" : BASELINE_STYLE[method].label));
-          coverage.textContent = `Running every baseline on an API model was beyond our budget, so ${resultsView.model} was run with QuickScope${ran.length ? ` and ${ran.join(", ")}` : ""} only. The full comparison is on the open-weight models.`;
+          coverage.textContent = `Only QuickScope${ran.length ? ` and ${ran.join(", ")}` : ""} were run on this model; every baseline was beyond our budget for API models.`;
         }
         document.getElementById("model-select").value = resultsView.model;
         document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
@@ -2871,10 +2972,10 @@
         const found = window.QUICKSCOPE_BUDGET.found?.[resultsView.model]?.[resultsView.bench];
         if (found?.configs.length) {
           const certifiedCount = found.configs.filter((config) => config.certified).length;
-          intro.textContent = `The configurations a QuickScope run on ${benchName} ranks hardest for ${resultsView.model}, by the lower bound on their error rate. `
+          intro.textContent = `Ranked by the lower bound on their error rate. `
             + (certifiedCount
               ? `${certifiedCount} cleared the ${found.tau} threshold and ${certifiedCount === 1 ? "is" : "are"} certified.`
-              : `None cleared the ${found.tau} threshold for certification in this run.`);
+              : `None cleared the ${found.tau} certification threshold.`);
           list.innerHTML = found.configs.map((config) => foundItem(describeParams(resultsView.bench, config.params), config, config.certified)).join("");
           return;
         }
@@ -2951,6 +3052,50 @@
           renderResults();
         });
 
+        // Legend: hover highlights a series, click hides or shows it, double-click shows it alone.
+        const legend = document.getElementById("results-legend");
+        const setFocus = (key) => {
+          if (resultsView.focus === key) return;
+          resultsView.focus = key;
+          drawResults();
+        };
+        legend.addEventListener("mouseover", (event) => {
+          const item = event.target.closest("[data-series]");
+          setFocus(item && isShown(item.dataset.series) ? item.dataset.series : null);
+        });
+        legend.addEventListener("mouseleave", () => setFocus(null));
+        legend.addEventListener("focusin", (event) => {
+          const item = event.target.closest("[data-series]");
+          if (item && isShown(item.dataset.series)) setFocus(item.dataset.series);
+        });
+        legend.addEventListener("focusout", () => setFocus(null));
+        legend.addEventListener("click", (event) => {
+          const item = event.target.closest("[data-series]");
+          if (!item) return;
+          const key = item.dataset.series;
+          if (event.detail === 2) {
+            // Double-click: show only this series, or everything again if it already stood alone.
+            const all = [...legend.querySelectorAll("[data-series]")].map((b) => b.dataset.series);
+            const alone = all.every((k) => k === key || resultsView.hidden.has(k));
+            resultsView.hidden = alone ? new Set() : new Set(all.filter((k) => k !== key));
+          } else if (resultsView.hidden.has(key)) {
+            resultsView.hidden.delete(key);
+          } else {
+            resultsView.hidden.add(key);
+          }
+          resultsView.focus = isShown(key) ? key : null;
+          renderLegend();
+          drawResults();
+          legend.querySelector(`[data-series="${key}"]`)?.focus();
+        });
+        document.getElementById("split-toggle").addEventListener("change", (event) => {
+          resultsView.split = event.target.checked;
+          renderLegend();
+          drawResults();
+        });
+
+        // Chart: the tooltip lists every visible series at the nearest budget, and the line
+        // nearest the pointer is highlighted.
         const canvas = document.getElementById("results-chart");
         const tip = document.getElementById("results-tip");
         canvas.addEventListener("mousemove", (event) => {
@@ -2958,8 +3103,10 @@
           if (!area) return;
           const rect = canvas.getBoundingClientRect();
           const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
           if (x < area.left - 10 || x > area.right + 10) {
             resultsView.hover = null;
+            resultsView.focus = null;
             tip.hidden = true;
             drawResults();
             return;
@@ -2967,24 +3114,36 @@
           const budget = area.budgets.reduce((best, b) => (Math.abs(area.sx(b) - x) < Math.abs(area.sx(best) - x) ? b : best));
           resultsView.hover = budget;
           const metric = RESULT_METRICS[resultsView.metric];
-          const { band, lines } = resultSeries();
-          const qs = band.find((p) => p.budget === budget);
-          const rows = [
-            qs ? `<div><span>QuickScope</span><span>${metric.format(qs.min)}–${metric.format(qs.max)}</span></div>` : "",
-            ...lines.map((line) => {
-              const point = line.points.find((p) => p.budget === budget);
-              return point ? `<div><span>${BASELINE_STYLE[line.method].label}</span><span>${metric.format(point.value)}</span></div>` : "";
-            }),
-          ].join("");
-          tip.innerHTML = `<strong>${budget.toLocaleString()} calls</strong>${rows}`;
+          const { band, variants, lines } = resultSeries();
+          const entries = [];
+          if (isShown("quickscope")) {
+            if (resultsView.split) {
+              variants.forEach(({ key, points }) => {
+                const p = points.find((q) => q.budget === budget);
+                if (p) entries.push({ key: "quickscope", label: `QuickScope ${VARIANT_STYLE[key].label.toLowerCase()}`, value: metric.format(p.value), y: area.sy(p.value) });
+              });
+            } else {
+              const p = band.find((q) => q.budget === budget);
+              if (p) entries.push({ key: "quickscope", label: "QuickScope", value: `${metric.format(p.min)}–${metric.format(p.max)}`, y: area.sy((p.min + p.max) / 2) });
+            }
+          }
+          lines.filter((s) => isShown(s.key)).forEach(({ key, points }) => {
+            const p = points.find((q) => q.budget === budget);
+            if (p) entries.push({ key, label: BASELINE_STYLE[key].label, value: metric.format(p.value), y: area.sy(p.value) });
+          });
+          const nearest = entries.reduce((best, e) => (!best || Math.abs(e.y - y) < Math.abs(best.y - y) ? e : best), null);
+          resultsView.focus = nearest && Math.abs(nearest.y - y) < 28 ? nearest.key : null;
+          tip.innerHTML = `<strong>${budget.toLocaleString()} calls</strong>${entries.map((e) =>
+            `<div class="${e.key === resultsView.focus ? "is-focus" : ""}"><span>${e.label}</span><span>${e.value}</span></div>`).join("")}`;
           tip.hidden = false;
           const left = area.sx(budget) + 12;
-          tip.style.left = `${Math.min(rect.width - tip.offsetWidth - 4, left)}px`;
+          tip.style.left = `${left + tip.offsetWidth > rect.width - 4 ? area.sx(budget) - tip.offsetWidth - 12 : left}px`;
           tip.style.top = `${area.top + 4}px`;
           drawResults();
         });
         canvas.addEventListener("mouseleave", () => {
           resultsView.hover = null;
+          resultsView.focus = null;
           tip.hidden = true;
           drawResults();
         });
