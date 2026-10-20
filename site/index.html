@@ -122,6 +122,10 @@
         box-sizing: border-box;
       }
 
+      [hidden] {
+        display: none !important;
+      }
+
       body {
         margin: 0;
         background: var(--paper);
@@ -1935,6 +1939,7 @@
             </div>
             <div class="results-legend" id="results-legend" aria-hidden="true"></div>
             <p class="coverage-note" id="results-coverage" hidden></p>
+            <p class="coverage-note" id="results-bench-note" hidden></p>
             <p class="muted" id="results-caption"></p>
           </article>
           <article class="sampling-panel">
@@ -2603,6 +2608,10 @@
         apt: { label: "APT", color: "--m-apt" },
         smac_ac: { label: "SMAC", color: "--m-smac" },
       };
+      // What a reader should know about a benchmark before comparing lines on it.
+      const RESULT_BENCH_NOTES = {
+        steer_me: "STEER-ME's space is small, so every method eventually finds its hard configurations, and the cheap baselines get there quickly. This is the small-space case from the budget comparison above.",
+      };
       // Benchmark keys in the budget file, and their names in the older run data used for the found list.
       const RESULT_BENCH_NAMES = { dyval: "DyVal", steer_me: "STEER-ME", grid: "Grid Reasoning" };
       var resultsView = { model: null, bench: null, metric: "high_explored", area: null, hover: null };
@@ -2739,6 +2748,14 @@
         }
       }
 
+      // Benchmarks this model has results for, in the file's order.
+      function modelBenchmarks(model) {
+        const data = window.QUICKSCOPE_BUDGET;
+        const benches = new Set(data.rows.filter((row) => row.model === model).map((row) => row.benchmark));
+        Object.keys(data.found?.[model] || {}).forEach((bench) => benches.add(bench));
+        return Object.keys(data.benchmarks).filter((bench) => benches.has(bench));
+      }
+
       // Baselines this model was actually run with (any benchmark).
       function modelBaselines(model) {
         const data = window.QUICKSCOPE_BUDGET;
@@ -2765,6 +2782,12 @@
           `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
           ...present.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
         ].join("");
+        const benchNote = document.getElementById("results-bench-note");
+        benchNote.hidden = !RESULT_BENCH_NOTES[resultsView.bench];
+        benchNote.textContent = RESULT_BENCH_NOTES[resultsView.bench] || "";
+        document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
+          button.hidden = !modelBenchmarks(resultsView.model).includes(button.dataset.bench);
+        });
         const coverage = document.getElementById("results-coverage");
         const missing = data.baselines.filter((method) => !present.includes(method));
         coverage.hidden = !missing.length;
@@ -2887,7 +2910,7 @@
         const full = data.models.filter((model) => modelBaselines(model).length === data.baselines.length);
         const partial = data.models.filter((model) => !full.includes(model));
         resultsView.model = full[0] || data.models[0];
-        resultsView.bench = Object.keys(data.benchmarks)[0];
+        resultsView.bench = modelBenchmarks(resultsView.model)[0] || Object.keys(data.benchmarks)[0];
         // A dropdown, not buttons: the list of models will keep growing.
         const modelSelect = document.getElementById("model-select");
         const options = (models) => models.map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
@@ -2896,6 +2919,8 @@
           : options(data.models);
         modelSelect.addEventListener("change", () => {
           resultsView.model = modelSelect.value;
+          const benches = modelBenchmarks(resultsView.model);
+          if (!benches.includes(resultsView.bench)) resultsView.bench = benches[0];
           renderResults();
         });
         const benchSwitch = document.getElementById("bench-switch");

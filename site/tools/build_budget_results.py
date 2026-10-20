@@ -185,6 +185,10 @@ def main() -> None:
         if not sep:
             parser.error(f"--runs takes MODEL=RESULTS_ROOT, got {spec!r}")
         found[model] = found_configs(Path(root))
+        # Keep only the benchmarks this model is charted on, when it has chart rows at all.
+        charted = {r["benchmark"] for r in rows if r["model"] == model}
+        if charted:
+            found[model] = {bench: v for bench, v in found[model].items() if bench in charted}
     data = {
         "placeholder": bool(args.placeholder),
         "found": found,
