@@ -2718,10 +2718,10 @@
 
       // Results by budget, from site/assets/budget-results.js (built by site/tools/build_budget_results.py).
       const RESULT_METRICS = {
-        high_explored: {
+        naive_true: {
           label: "Hard found",
           title: "Hard configurations found",
-          caption: (tau) => `Configurations each method sampled whose held-out error rate is at least ${tau}.`,
+          caption: (tau) => `Configurations a method sampled at least 20 times whose observed and held-out error rates are both at least ${tau}.`,
           format: (v) => Math.round(v).toLocaleString(),
         },
         topk_true: {
@@ -2761,7 +2761,7 @@
       // Benchmark keys in the budget file, and their names in the older run data used for the found list.
       const RESULT_BENCH_NAMES = { dyval: "DyVal", steer_me: "STEER-ME", grid: "Grid Reasoning" };
       var resultsView = {
-        model: null, bench: null, metric: "high_explored", area: null,
+        model: null, bench: null, metric: "naive_true", area: null,
         hover: null, focus: null, hidden: new Set(), split: false,
       };
 

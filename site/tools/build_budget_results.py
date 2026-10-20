@@ -36,7 +36,9 @@ BENCHMARKS = {"dyval": "DyVal", "steer_me": "STEER-ME", "grid": "Grid Reasoning"
 # The QuickScope variants are drawn as one band; the rest are baselines drawn as lines.
 QUICKSCOPE = ("coup_nocert", "coup_cert", "coup_adaptive")
 BASELINES = ("uniform", "successive_halving", "hyperband", "apt", "smac_ac")
-METRICS = ("high_explored", "topk_true", "topk_gt_mean", "explored", "certified", "cert_true")
+# naive_true is the paper's "hard configurations found": sampled at least --naive-min-n times
+# (20 in the paper) with empirical and held-out error rates both at least tau.
+METRICS = ("naive_true", "high_explored", "topk_true", "topk_gt_mean", "explored", "certified", "cert_true")
 # Configuration parameters per benchmark, as compare_methods_at_budget.py reads them.
 PARAMS = {
     "dyval": ["dataset_type_id", "depth", "num_children_per_node", "extra_links_per_node", "add_rand_desc", "order_id"],
@@ -152,7 +154,7 @@ def placeholder() -> list[dict]:
                     top = min(10, round(10 * min(1, 1.6 * progress) * noise))
                     rows.append({
                         "model": model, "benchmark": bench, "method": method, "budget": b, "tau": taus[bench],
-                        "high_explored": found, "topk_true": top,
+                        "naive_true": round(found * 0.6), "high_explored": found, "topk_true": top,
                         "topk_gt_mean": round(min(0.99, 0.45 + 0.5 * min(1, 1.5 * progress) * noise), 3),
                         "explored": None, "certified": None, "cert_true": None,
                     })
