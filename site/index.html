@@ -1470,6 +1470,19 @@
         font-variant-numeric: tabular-nums;
       }
 
+      /* Chart options sit with the chart's title, like the space switch above the budget grids. */
+      .results-head {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+        justify-content: space-between;
+      }
+
+      .results-head h3 {
+        margin: 0;
+      }
+
       .results-legend-row {
         align-items: center;
         display: flex;
@@ -1965,18 +1978,20 @@
         </div>
         <div class="results-grid">
           <article class="sampling-panel">
-            <h3 id="results-title"></h3>
+            <div class="results-head">
+              <h3 id="results-title"></h3>
+              <label class="truth-switch" for="split-toggle">
+                <input id="split-toggle" type="checkbox" />
+                <span class="truth-track" aria-hidden="true"></span>
+                <span class="truth-label">Split QuickScope variants</span>
+              </label>
+            </div>
             <div class="results-chart-wrap">
               <canvas id="results-chart" aria-label="Results by budget"></canvas>
               <div class="results-tip" id="results-tip" hidden></div>
             </div>
             <div class="results-legend-row">
               <div class="results-legend" id="results-legend" role="group" aria-label="Series: click to hide or show, double-click to show one alone"></div>
-              <label class="truth-switch" for="split-toggle">
-                <input id="split-toggle" type="checkbox" />
-                <span class="truth-track" aria-hidden="true"></span>
-                <span class="truth-label">Each variant</span>
-              </label>
             </div>
             <p class="coverage-note" id="results-coverage" hidden></p>
             <p class="coverage-note" id="results-bench-note" hidden></p>
@@ -2736,7 +2751,7 @@
         const step = [1, 2, 2.5, 5, 10].map((m) => m * 10 ** Math.floor(Math.log10(span / 5)))
           .find((s) => span / s <= 6) || span / 4;
         const tickValues = [];
-        for (let v = Math.ceil(minY / step - 1e-9) * step; v <= maxY + 1e-9; v += step) tickValues.push(v);
+        for (let v = Math.ceil(minY / step - 1e-9) * step; v <= maxY + 1e-9; v += step) tickValues.push(Math.abs(v) < 1e-9 ? 0 : v);
         tickValues.forEach((v) => {
           const y = sy(v);
           g.beginPath();
