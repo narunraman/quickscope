@@ -1381,6 +1381,7 @@
         margin: 1.1rem 0 0.9rem;
       }
 
+      /* Model picker: a HUD-styled listbox in place of the system dropdown. */
       .hud-select {
         align-items: stretch;
         display: inline-flex;
@@ -1388,40 +1389,117 @@
         margin: 0;
       }
 
-      .hud-select select {
-        appearance: none;
+      .hud-select-anchor {
+        display: inline-flex;
+        position: relative;
+      }
+
+      .hud-select-button {
+        align-items: center;
         background-color: rgba(var(--ink-rgb), 0.07);
-        background-image:
-          linear-gradient(45deg, transparent 50%, var(--accent-strong) 50%),
-          linear-gradient(135deg, var(--accent-strong) 50%, transparent 50%);
-        background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
-        background-repeat: no-repeat;
-        background-size: 5px 5px, 5px 5px;
         border: 0;
         border-radius: 0;
         clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
         color: var(--ink);
+        display: inline-flex;
         font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         font-size: 0.78rem;
+        gap: 0.8rem;
+        justify-content: space-between;
         letter-spacing: 0.1em;
-        min-width: 11rem;
-        padding: 0.42rem 2rem 0.38rem 0.85rem;
+        min-width: 13rem;
+        padding: 0.42rem 0.8rem 0.38rem 0.85rem;
+        text-align: left;
         text-transform: uppercase;
       }
 
-      .hud-select select:hover {
+      .hud-select-button::after {
+        border-bottom: 2px solid var(--accent-strong);
+        border-right: 2px solid var(--accent-strong);
+        content: "";
+        flex: 0 0 auto;
+        height: 6px;
+        margin-top: -3px;
+        transform: rotate(45deg);
+        transition: transform 120ms ease;
+        width: 6px;
+      }
+
+      .hud-select-button[aria-expanded="true"]::after {
+        margin-top: 3px;
+        transform: rotate(-135deg);
+      }
+
+      .hud-select-button:hover,
+      .hud-select-button[aria-expanded="true"] {
         background-color: rgba(var(--accent-rgb), 0.22);
       }
 
-      .hud-select select:focus-visible {
-        outline: 2px solid var(--accent-strong);
-        outline-offset: 2px;
+      /* clip-path would cut an outline, so focus is drawn inside the shape. */
+      .hud-select-button:focus-visible {
+        box-shadow: inset 0 0 0 2px var(--accent-strong);
+        outline: none;
       }
 
-      .hud-select option {
+      .hud-select-list {
         background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+        left: 0;
+        list-style: none;
+        margin: 0;
+        max-height: 18rem;
+        min-width: 100%;
+        overflow-y: auto;
+        padding: 0.35rem 0;
+        position: absolute;
+        top: calc(100% + 4px);
+        z-index: 30;
+      }
+
+      .hud-select-list:focus {
+        outline: none;
+      }
+
+      .hud-select-group {
+        align-items: center;
+        color: var(--accent-strong);
+        display: flex;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        font-size: 0.64rem;
+        gap: 0.4rem;
+        letter-spacing: 0.14em;
+        padding: 0.5rem 0.85rem 0.25rem;
+        text-transform: uppercase;
+      }
+
+      .hud-select-group::before {
+        background: var(--accent-strong);
+        content: "";
+        height: 0.6rem;
+        width: 3px;
+      }
+
+      .hud-select-option {
+        border-left: 3px solid transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        padding: 0.4rem 0.85rem 0.36rem 0.8rem;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .hud-select-option.is-active {
+        background: rgba(var(--accent-rgb), 0.18);
         color: var(--ink);
-        text-transform: none;
+      }
+
+      .hud-select-option[aria-selected="true"] {
+        border-left-color: var(--accent);
+        color: var(--ink);
       }
 
       .results-grid {
@@ -1965,10 +2043,15 @@
           Placeholder numbers, shaped like the paper's results. The real results replace them.
         </p>
         <div class="results-controls">
-          <label class="hud-select" for="model-select">
-            <span class="switch-label">Model</span>
-            <select id="model-select"></select>
-          </label>
+          <div class="hud-select">
+            <span class="switch-label" id="model-label">Model</span>
+            <span class="hud-select-anchor">
+              <button class="hud-select-button" id="model-button" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="model-label model-button">
+                <span id="model-current"></span>
+              </button>
+              <ul class="hud-select-list" id="model-list" role="listbox" aria-labelledby="model-label" tabindex="-1" hidden></ul>
+            </span>
+          </div>
           <div class="size-switch" role="radiogroup" aria-label="Benchmark" id="bench-switch">
             <span class="switch-label">Benchmark</span>
           </div>
@@ -2918,7 +3001,10 @@
           const ran = present.map((method) => (method === "uniform" ? "uniform sampling" : BASELINE_STYLE[method].label));
           coverage.textContent = `Only QuickScope${ran.length ? ` and ${ran.join(", ")}` : ""} were run on this model; every baseline was beyond our budget for API models.`;
         }
-        document.getElementById("model-select").value = resultsView.model;
+        document.getElementById("model-current").textContent = resultsView.model;
+        document.querySelectorAll("#model-list [role=option]").forEach((option) => {
+          option.setAttribute("aria-selected", String(option.dataset.model === resultsView.model));
+        });
         document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
           button.setAttribute("aria-checked", String(button.dataset.bench === resultsView.bench));
         });
@@ -3026,6 +3112,85 @@
         drawResults();
       }
 
+      // Model picker: a button that opens a listbox, with the keyboard behaviour of a native select.
+      function initModelPicker(groups) {
+        const button = document.getElementById("model-button");
+        const list = document.getElementById("model-list");
+        list.innerHTML = groups.map((group, g) => `
+          ${group.label ? `<li class="hud-select-group" role="presentation" id="model-group-${g}">${escapeHtml(group.label)}</li>` : ""}
+          ${group.models.map((model, i) => `<li class="hud-select-option" role="option" id="model-opt-${g}-${i}" data-model="${escapeHtml(model)}" aria-selected="false">${escapeHtml(model)}</li>`).join("")}
+        `).join("");
+        const options = [...list.querySelectorAll("[role=option]")];
+        let active = 0;
+
+        function setActive(index) {
+          active = (index + options.length) % options.length;
+          options.forEach((option, i) => option.classList.toggle("is-active", i === active));
+          list.setAttribute("aria-activedescendant", options[active].id);
+          options[active].scrollIntoView({ block: "nearest" });
+        }
+        function open() {
+          list.hidden = false;
+          button.setAttribute("aria-expanded", "true");
+          setActive(Math.max(0, options.findIndex((option) => option.dataset.model === resultsView.model)));
+          list.focus();
+        }
+        function close(focusButton = true) {
+          list.hidden = true;
+          button.setAttribute("aria-expanded", "false");
+          if (focusButton) button.focus();
+        }
+        function choose(index) {
+          resultsView.model = options[index].dataset.model;
+          const benches = modelBenchmarks(resultsView.model);
+          if (!benches.includes(resultsView.bench)) resultsView.bench = benches[0];
+          close();
+          renderResults();
+        }
+
+        button.addEventListener("click", () => (list.hidden ? open() : close()));
+        button.addEventListener("keydown", (event) => {
+          if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+            event.preventDefault();
+            open();
+          }
+        });
+        list.addEventListener("keydown", (event) => {
+          const keys = {
+            ArrowDown: () => setActive(active + 1),
+            ArrowUp: () => setActive(active - 1),
+            Home: () => setActive(0),
+            End: () => setActive(options.length - 1),
+            Enter: () => choose(active),
+            " ": () => choose(active),
+            Escape: () => close(),
+          };
+          if (keys[event.key]) {
+            event.preventDefault();
+            keys[event.key]();
+          } else if (event.key === "Tab") {
+            close(false);
+          } else if (event.key.length === 1) {
+            // Type a letter to jump to the next model starting with it.
+            const start = active + 1;
+            const match = [...options.slice(start), ...options.slice(0, start)]
+              .find((option) => option.dataset.model.toLowerCase().startsWith(event.key.toLowerCase()));
+            if (match) setActive(options.indexOf(match));
+          }
+        });
+        list.addEventListener("mousemove", (event) => {
+          const option = event.target.closest("[role=option]");
+          if (option) setActive(options.indexOf(option));
+        });
+        list.addEventListener("click", (event) => {
+          const option = event.target.closest("[role=option]");
+          if (option) choose(options.indexOf(option));
+        });
+        document.addEventListener("click", (event) => {
+          if (!list.hidden && !event.target.closest(".hud-select-anchor")) close(false);
+        });
+      }
+
       function initResults() {
         const data = window.QUICKSCOPE_BUDGET;
         if (!data) return;
@@ -3035,17 +3200,9 @@
         resultsView.model = full[0] || data.models[0];
         resultsView.bench = modelBenchmarks(resultsView.model)[0] || Object.keys(data.benchmarks)[0];
         // A dropdown, not buttons: the list of models will keep growing.
-        const modelSelect = document.getElementById("model-select");
-        const options = (models) => models.map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
-        modelSelect.innerHTML = full.length && partial.length
-          ? `<optgroup label="All baselines">${options(full)}</optgroup><optgroup label="Fewer baselines">${options(partial)}</optgroup>`
-          : options(data.models);
-        modelSelect.addEventListener("change", () => {
-          resultsView.model = modelSelect.value;
-          const benches = modelBenchmarks(resultsView.model);
-          if (!benches.includes(resultsView.bench)) resultsView.bench = benches[0];
-          renderResults();
-        });
+        initModelPicker(full.length && partial.length
+          ? [{ label: "All baselines", models: full }, { label: "Fewer baselines", models: partial }]
+          : [{ label: null, models: data.models }]);
         const benchSwitch = document.getElementById("bench-switch");
         Object.entries(data.benchmarks).forEach(([key, name]) => {
           benchSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-bench="${key}">${escapeHtml(name)}</button>`);
