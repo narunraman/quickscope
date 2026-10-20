@@ -1364,6 +1364,49 @@
         margin: 1.1rem 0 0.9rem;
       }
 
+      .hud-select {
+        align-items: stretch;
+        display: inline-flex;
+        gap: 3px;
+        margin: 0;
+      }
+
+      .hud-select select {
+        appearance: none;
+        background-color: rgba(var(--ink-rgb), 0.07);
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--accent-strong) 50%),
+          linear-gradient(135deg, var(--accent-strong) 50%, transparent 50%);
+        background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+        background-repeat: no-repeat;
+        background-size: 5px 5px, 5px 5px;
+        border: 0;
+        border-radius: 0;
+        clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+        color: var(--ink);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        min-width: 11rem;
+        padding: 0.42rem 2rem 0.38rem 0.85rem;
+        text-transform: uppercase;
+      }
+
+      .hud-select select:hover {
+        background-color: rgba(var(--accent-rgb), 0.22);
+      }
+
+      .hud-select select:focus-visible {
+        outline: 2px solid var(--accent-strong);
+        outline-offset: 2px;
+      }
+
+      .hud-select option {
+        background: var(--panel);
+        color: var(--ink);
+        text-transform: none;
+      }
+
       .results-grid {
         display: grid;
         gap: 12px;
@@ -1851,9 +1894,10 @@
           Placeholder numbers, shaped like the paper's results. The real results replace them.
         </p>
         <div class="results-controls">
-          <div class="size-switch" role="radiogroup" aria-label="Model" id="model-switch">
+          <label class="hud-select" for="model-select">
             <span class="switch-label">Model</span>
-          </div>
+            <select id="model-select"></select>
+          </label>
           <div class="size-switch" role="radiogroup" aria-label="Benchmark" id="bench-switch">
             <span class="switch-label">Benchmark</span>
           </div>
@@ -2691,9 +2735,7 @@
           `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
           ...data.baselines.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
         ].join("");
-        document.querySelectorAll("#model-switch [data-model]").forEach((button) => {
-          button.setAttribute("aria-checked", String(button.dataset.model === resultsView.model));
-        });
+        document.getElementById("model-select").value = resultsView.model;
         document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
           button.setAttribute("aria-checked", String(button.dataset.bench === resultsView.bench));
         });
@@ -2765,14 +2807,11 @@
         if (!data) return;
         resultsView.model = data.models[0];
         resultsView.bench = Object.keys(data.benchmarks)[0];
-        const modelSwitch = document.getElementById("model-switch");
-        data.models.forEach((model) => {
-          modelSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-model="${escapeHtml(model)}">${escapeHtml(model)}</button>`);
-        });
-        modelSwitch.addEventListener("click", (event) => {
-          const button = event.target.closest("[data-model]");
-          if (!button) return;
-          resultsView.model = button.dataset.model;
+        // A dropdown, not buttons: the list of models will keep growing.
+        const modelSelect = document.getElementById("model-select");
+        modelSelect.innerHTML = data.models.map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
+        modelSelect.addEventListener("change", () => {
+          resultsView.model = modelSelect.value;
           renderResults();
         });
         const benchSwitch = document.getElementById("bench-switch");
