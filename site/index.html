@@ -812,6 +812,12 @@
         margin: 0;
       }
 
+      /* Captions inside panels match the other captions on the page. */
+      .sampling-panel p.muted {
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
       .dot-legend {
         color: var(--muted);
         display: flex;
@@ -830,8 +836,9 @@
       .dot-legend i {
         border-radius: 50%;
         display: inline-block;
-        height: 0.8rem;
-        width: 0.8rem;
+        flex: 0 0 auto;
+        height: 12px;
+        width: 12px;
       }
 
       .dot-legend .key-ramp {
@@ -845,12 +852,18 @@
         box-shadow: 0 0 0 0.6px rgba(22, 17, 12, 0.45);
       }
 
+      /* Whole-pixel keys so the dot sits exactly in the ring at any zoom. */
       .dot-legend .key-cert {
-        background: #f06d5f;
-        box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.6px var(--ink);
-        height: 0.6rem;
-        margin: 0 0.15rem;
-        width: 0.6rem;
+        background: radial-gradient(circle closest-side, #f06d5f 0 5px, transparent 5.5px);
+        border: 2px solid var(--ink);
+        height: 16px;
+        width: 16px;
+      }
+
+      .dot-legend .key-ring {
+        border: 1.5px solid var(--ink);
+        height: 12px;
+        width: 12px;
       }
 
       /* Config lines and the parts of the question they produce. */
@@ -1086,7 +1099,7 @@
 
       .algorithm-out {
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 0.86rem;
         margin: 1rem 0 0;
         max-width: 80ch;
       }
@@ -1883,7 +1896,7 @@
         </div>
         <div class="dot-legend" aria-hidden="true">
           <span><i class="key-ramp"></i>utility, low to high</span>
-          <span><i class="key-cert"></i>the configurations each utility ranks highest</span>
+          <span><i class="key-ring"></i>the configurations each utility ranks highest</span>
         </div>
         <p class="algorithm-out">
           Both come built in. A utility is any function from a batch of answers to a number
@@ -2781,10 +2794,61 @@
         return parts.map((part) => part.replace(/_/g, " ").replace(/\d+\.\d{3,}/g, (n) => Number(n).toFixed(2))).join(" · ");
       }
 
+      // Readable settings for a configuration given as a parameter dict (budget-results.js found lists).
+      const DYVAL_TYPES = ["arithmetic", "linear equations", "boolean logic", "deductive logic", "abductive logic", "reachability", "max-sum path"];
+      const DYVAL_ORDERS = ["topological order", "reversed order", "random order"];
+
+      function describeParams(bench, p) {
+        const words = (value) => String(value).replace(/_/g, " ");
+        if (bench === "dyval") {
+          return [
+            DYVAL_TYPES[p.dataset_type_id - 1] || `type ${p.dataset_type_id}`,
+            `depth ${p.depth}`,
+            `${p.num_children_per_node} children`,
+            p.extra_links_per_node ? `${p.extra_links_per_node} extra links` : null,
+            p.add_rand_desc ? `${p.add_rand_desc} distractor${p.add_rand_desc === 1 ? "" : "s"}` : null,
+            DYVAL_ORDERS[p.order_id - 1],
+          ].filter(Boolean).join(" · ");
+        }
+        if (bench === "grid") {
+          return [
+            words(p.grid_reasoning_task),
+            `${p.rows}×${p.cols} grid`,
+            p.p_blocked != null ? `${Math.round(p.p_blocked * 100)}% blocked` : null,
+            p.num_islands != null ? `${p.num_islands} islands` : null,
+            p.island_size != null ? `island size ${p.island_size}` : null,
+          ].filter(Boolean).join(" · ");
+        }
+        return Object.values(p).filter((v) => v != null).map(words).join(" · ");
+      }
+
+      function foundItem(name, config, certified) {
+        return `<li class="${certified ? "is-certified" : ""}">
+            <span class="found-name">${escapeHtml(name)}</span>
+            <span class="found-stats">
+              <span>${(config.mean * 100).toFixed(1)}% error</span>
+              <span>lower bound ${(config.lcb * 100).toFixed(1)}%</span>
+              <span>${config.n.toLocaleString()} call${config.n === 1 ? "" : "s"}</span>
+              ${certified ? '<span class="cert">Certified</span>' : ""}
+            </span>
+          </li>`;
+      }
+
       function renderFoundList() {
         const list = document.getElementById("found-list");
         const intro = document.getElementById("found-intro");
         const benchName = RESULT_BENCH_NAMES[resultsView.bench];
+        const found = window.QUICKSCOPE_BUDGET.found?.[resultsView.model]?.[resultsView.bench];
+        if (found?.configs.length) {
+          const certifiedCount = found.configs.filter((config) => config.certified).length;
+          intro.textContent = `The configurations a QuickScope run on ${benchName} ranks hardest for ${resultsView.model}, by the lower bound on their error rate. `
+            + (certifiedCount
+              ? `${certifiedCount} cleared the ${found.tau} threshold and are certified.`
+              : `None cleared the ${found.tau} threshold for certification in this run.`);
+          list.innerHTML = found.configs.map((config) => foundItem(describeParams(resultsView.bench, config.params), config, config.certified)).join("");
+          return;
+        }
+        // Otherwise fall back to the older runs in assets/results-data.js (error-rate utility).
         const run = (window.QUICKSCOPE_RESULTS?.comparisons || []).find((c) =>
           c.benchmark === benchName && c.model === resultsView.model && c.utility === "error-rate");
         const quickscope = run?.methods.filter((m) => m.kind === "quickscope") || [];
@@ -2806,18 +2870,8 @@
         }).slice(0, 6);
         const threshold = method.threshold;
         intro.textContent = `The hardest configurations a QuickScope run found on ${benchName} for ${resultsView.model}${threshold ? `, certified at ${threshold}` : ""}.`;
-        list.innerHTML = configs.map((config) => {
-          const certified = threshold != null && config.lcb >= threshold;
-          return `<li class="${certified ? "is-certified" : ""}">
-            <span class="found-name">${escapeHtml(prettyConfig(resultsView.bench, config.name))}</span>
-            <span class="found-stats">
-              <span>error ${config.mean.toFixed(2)}</span>
-              <span>lower bound ${config.lcb.toFixed(2)}</span>
-              <span>${config.n.toLocaleString()} calls</span>
-              ${certified ? '<span class="cert">Certified</span>' : ""}
-            </span>
-          </li>`;
-        }).join("");
+        list.innerHTML = configs.map((config) =>
+          foundItem(prettyConfig(resultsView.bench, config.name), config, threshold != null && config.lcb >= threshold)).join("");
       }
 
       function renderResults() {

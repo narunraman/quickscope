@@ -1,5 +1,5 @@
 window.QUICKSCOPE_PAGE = {
-  updated: "April 2026",
+  updated: "October 2026",
   headline: "Find where your LLM fails, with confidence.",
   subhead:
     "QuickScope searches dynamic benchmark spaces for configurations where a model fails reliably, not just once. It adaptively allocates model calls, tracks confidence bounds, and returns certified weak spots under a user-chosen utility.",
