@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script src="./data.js"></script>
     <script src="./assets/results-data.js"></script>
+    <script src="./assets/budget-results.js"></script>
     <script>
       (() => {
         let savedTheme = null;
@@ -76,6 +77,12 @@
         --syntax-arg: #ff9e9e;
         --marker-rgb: 194, 210, 122;
         --marker-alpha: 0.32;
+        /* Baseline lines follow the paper's figure colours, lifted for the dark page. */
+        --m-uniform: #d9e2d3;
+        --m-sh: #4fc1b2;
+        --m-hb: #b98ad0;
+        --m-apt: #d0aa5f;
+        --m-smac: #8f9a8b;
       }
 
       [data-theme="light"] {
@@ -104,6 +111,11 @@
         --syntax-arg: #b23a3a;
         --marker-rgb: 236, 214, 82;
         --marker-alpha: 0.6;
+        --m-uniform: #1d241b;
+        --m-sh: #1f7d72;
+        --m-hb: #7b2d8e;
+        --m-apt: #8c6d31;
+        --m-smac: #7d857a;
       }
 
       * {
@@ -447,13 +459,6 @@
         padding: 56px 0;
       }
 
-      .explorer {
-        background: var(--soft);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 20px;
-      }
-
       .score-panels {
         grid-template-columns: repeat(5, minmax(0, 1fr));
         margin-top: 1.25rem;
@@ -646,6 +651,7 @@
       .size-switch {
         align-items: stretch;
         display: inline-flex;
+        flex-wrap: wrap;
         gap: 3px;
       }
 
@@ -670,6 +676,7 @@
       }
 
       .size-switch button {
+        white-space: nowrap;
         background: rgba(var(--ink-rgb), 0.07);
         border: 0;
         border-radius: 0;
@@ -1084,13 +1091,6 @@
         max-width: 80ch;
       }
 
-      .filters {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(150px, 1fr));
-        gap: 10px;
-        margin: 1rem 0 1.2rem;
-      }
-
       label {
         color: var(--muted);
         display: grid;
@@ -1109,251 +1109,6 @@
         color: var(--ink);
         min-height: 42px;
         padding: 0.55rem 2rem 0.55rem 0.7rem;
-      }
-
-      .explorer-grid {
-        display: grid;
-        align-items: stretch;
-        grid-template-columns: minmax(0, 1fr) 250px;
-        gap: 14px;
-      }
-
-      .chart-wrap {
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        padding: 1rem;
-        position: relative;
-      }
-
-      .chart-tooltip {
-        background: var(--tooltip-bg);
-        border: 1px solid rgba(var(--accent-rgb), 0.5);
-        border-radius: 6px;
-        color: var(--ink);
-        display: none;
-        font-size: 0.78rem;
-        max-width: 260px;
-        padding: 0.65rem;
-        pointer-events: none;
-        position: absolute;
-        z-index: 4;
-      }
-
-      .chart-tooltip strong {
-        display: block;
-        font-family: var(--body-font), Poppins, ui-sans-serif, sans-serif;
-        margin-bottom: 0.35rem;
-      }
-
-      .chart-tooltip div {
-        align-items: baseline;
-        display: grid;
-        gap: 10px;
-        grid-template-columns: minmax(0, 1fr) auto;
-      }
-
-      canvas {
-        display: block;
-        height: 420px;
-        width: 100%;
-      }
-
-      .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 0.8rem;
-      }
-
-      .legend span {
-        align-items: center;
-        color: var(--muted);
-        display: inline-flex;
-        font-size: 0.9rem;
-        gap: 6px;
-      }
-
-      .swatch {
-        border-radius: 99px;
-        display: inline-block;
-        height: 3px;
-        width: 24px;
-      }
-
-      .side {
-        display: grid;
-        gap: 12px;
-      }
-
-      .side .panel {
-        min-height: 0;
-      }
-
-      .panel {
-        padding: 0.95rem;
-      }
-
-      .panel p {
-        margin-bottom: 0.7rem;
-      }
-
-      .mini-metrics {
-        display: grid;
-        gap: 8px;
-      }
-
-      .mini-metrics div {
-        border-top: 1px solid var(--line);
-        padding-top: 0.65rem;
-      }
-
-      .mini-metrics div:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .side-scroll {
-        margin: 0 -0.95rem -0.95rem;
-        max-height: 540px;
-        overflow: auto;
-        scrollbar-color: rgba(var(--accent-rgb), 0.6) var(--code);
-        scrollbar-width: thin;
-      }
-
-      .side-scroll::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-      }
-
-      .side-scroll::-webkit-scrollbar-track {
-        background: var(--code);
-      }
-
-      .side-scroll::-webkit-scrollbar-thumb {
-        background: rgba(var(--accent-rgb), 0.55);
-        border: 2px solid var(--code);
-        border-radius: 999px;
-      }
-
-      .side-scroll::-webkit-scrollbar-thumb:hover {
-        background: rgba(var(--accent-strong-rgb), 0.8);
-      }
-
-      .side-scroll table {
-        border-collapse: separate;
-        border-spacing: 0;
-        table-layout: fixed;
-        width: 100%;
-      }
-
-      .side-scroll th,
-      .side-scroll td {
-        overflow: hidden;
-        font-size: 0.76rem;
-        padding: 0.5rem 0.5rem;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .side-scroll th {
-        background: var(--panel);
-        position: sticky;
-        top: 0;
-        z-index: 1;
-      }
-
-      .side-scroll th:nth-child(1),
-      .side-scroll td:nth-child(1) {
-        color: var(--accent-strong);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        width: 12%;
-      }
-
-      .side-scroll th:nth-child(2),
-      .side-scroll td:nth-child(2) {
-        width: 37%;
-      }
-
-      .side-scroll th:nth-child(3),
-      .side-scroll td:nth-child(3) {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        text-align: right;
-        width: 22%;
-      }
-
-      .side-scroll th:nth-child(4),
-      .side-scroll td:nth-child(4) {
-        text-align: center;
-        width: 29%;
-      }
-
-      .config-toggle {
-        align-items: center;
-        background: transparent;
-        border: 1px solid rgba(var(--accent-rgb), 0.46);
-        border-radius: 50%;
-        color: var(--accent-strong);
-        display: inline-flex;
-        font-weight: 800;
-        height: 1.35rem;
-        justify-content: center;
-        line-height: 1;
-        padding: 0;
-        width: 1.35rem;
-      }
-
-      .config-detail-row[hidden] {
-        display: none;
-      }
-
-      .config-detail {
-        background: var(--code);
-        border: 1px solid var(--line);
-        border-radius: 5px;
-        color: var(--muted);
-        margin: 0;
-        padding: 0.55rem;
-        text-align: left;
-        white-space: normal;
-      }
-
-      .controls {
-        align-items: center;
-        display: grid;
-        gap: 10px;
-        grid-template-columns: minmax(0, 1fr) auto;
-        margin-top: 0.9rem;
-      }
-
-      .scrubber {
-        accent-color: var(--accent);
-        width: 100%;
-      }
-
-      .icon-button {
-        align-items: center;
-        background: transparent;
-        border: 0;
-        color: var(--accent-strong);
-        display: inline-flex;
-        font-size: 1.15rem;
-        height: 28px;
-        justify-content: center;
-        padding: 0;
-        width: 28px;
-      }
-
-      .icon-button:hover {
-        color: var(--ink);
-      }
-
-      .callout-value {
-        color: var(--muted);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.86rem;
-        min-width: 8ch;
-        text-align: right;
       }
 
       button {
@@ -1589,6 +1344,147 @@
         gap: 10px;
       }
 
+      /* Results: QuickScope as a band against each baseline, by budget. */
+      .placeholder-flag {
+        border: 1px dashed var(--orange);
+        color: var(--orange);
+        display: inline-block;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        margin: 0 0 1rem;
+        padding: 0.35rem 0.6rem;
+        text-transform: uppercase;
+      }
+
+      .results-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem 1.4rem;
+        margin: 1.1rem 0 0.9rem;
+      }
+
+      .results-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+      }
+
+      .results-chart-wrap {
+        margin: 0.6rem 0 0.4rem;
+        position: relative;
+      }
+
+      .results-chart-wrap canvas {
+        display: block;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .results-tip {
+        background: var(--tooltip-bg);
+        border: 1px solid var(--line);
+        font-size: 0.74rem;
+        min-width: 11rem;
+        padding: 0.5rem 0.6rem;
+        pointer-events: none;
+        position: absolute;
+        z-index: 2;
+      }
+
+      .results-tip strong {
+        display: block;
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+      }
+
+      .results-tip div {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+      }
+
+      .results-tip span:last-child {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .results-legend {
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 0.74rem;
+        gap: 0.3rem 1rem;
+        margin-bottom: 0.6rem;
+      }
+
+      .results-legend span {
+        align-items: center;
+        display: inline-flex;
+        gap: 0.4rem;
+      }
+
+      .results-legend i {
+        display: inline-block;
+        height: 2px;
+        width: 1.1rem;
+      }
+
+      .results-legend i.band {
+        height: 0.6rem;
+        opacity: 0.45;
+      }
+
+      .found-intro {
+        font-size: 0.8rem;
+        margin: 0.4rem 0 0.7rem;
+      }
+
+      .found-list {
+        display: grid;
+        gap: 6px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .found-list li {
+        border-left: 3px solid var(--line);
+        display: grid;
+        gap: 0.25rem;
+        padding: 0.35rem 0 0.35rem 0.6rem;
+      }
+
+      .found-list li.is-certified {
+        border-left-color: var(--accent);
+      }
+
+      .found-name {
+        color: var(--ink);
+        font-size: 0.84rem;
+        line-height: 1.35;
+      }
+
+      .found-stats {
+        align-items: center;
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.7rem;
+        font-variant-numeric: tabular-nums;
+        gap: 0.2rem 0.8rem;
+      }
+
+      .found-stats .cert {
+        color: var(--accent-strong);
+        font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
       @media (max-width: 940px) {
         .filters,
         .explorer-grid,
@@ -1754,7 +1650,8 @@
         }
 
         .sampling-compare,
-        .utility-compare {
+        .utility-compare,
+        .results-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -1945,48 +1842,38 @@
       </section>
 
       <section aria-labelledby="explorer-title">
-        <h2 id="explorer-title">Results explorer</h2>
+        <h2 id="explorer-title">Against the usual search methods.</h2>
         <p class="lead">
-          Choose a benchmark, model, and utility. The plot compares the configurations
-          found by QuickScope variants against uniform sampling where that baseline is
-          available.
+          The same budgets on real benchmarks, with every method scored against held-out ground
+          truth: an estimate of each configuration's true error rate built from responses the
+          run itself never saw.
         </p>
-        <div class="explorer">
-          <div class="filters">
-            <label>Benchmark<select id="benchmark"></select></label>
-            <label>Model<select id="model"></select></label>
-            <label>Utility<select id="utility"></select></label>
+        <p class="placeholder-flag" id="results-placeholder" hidden>
+          Placeholder numbers, shaped like the paper's results. The real results replace them.
+        </p>
+        <div class="results-controls">
+          <div class="size-switch" role="radiogroup" aria-label="Benchmark" id="bench-switch">
+            <span class="switch-label">Benchmark</span>
           </div>
-          <div class="explorer-grid">
-            <div class="chart-wrap">
-              <canvas id="chart" width="980" height="520"></canvas>
-              <div class="chart-tooltip" id="chart-tooltip"></div>
-              <div class="legend" id="chart-legend"></div>
-              <div class="controls">
-                <input class="scrubber" id="config-count" type="range" min="5" max="200" step="5" value="40" aria-label="Number of top configurations" />
-                <span class="callout-value" id="config-count-value">top 40</span>
-              </div>
-              <p class="caption" id="chart-caption"></p>
+          <div class="size-switch" role="radiogroup" aria-label="Measure" id="metric-switch">
+            <span class="switch-label">Measure</span>
+          </div>
+        </div>
+        <div class="results-grid">
+          <article class="sampling-panel">
+            <h3 id="results-title"></h3>
+            <div class="results-chart-wrap">
+              <canvas id="results-chart" aria-label="Results by budget"></canvas>
+              <div class="results-tip" id="results-tip" hidden></div>
             </div>
-            <aside class="side">
-              <div class="panel">
-                <p class="eyebrow">Top found configs</p>
-                <div class="side-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th></th>
-                        <th>Method</th>
-                        <th>Mean</th>
-                        <th>Config</th>
-                      </tr>
-                    </thead>
-                    <tbody id="side-configs"></tbody>
-                  </table>
-                </div>
-              </div>
-            </aside>
-          </div>
+            <div class="results-legend" id="results-legend" aria-hidden="true"></div>
+            <p class="muted" id="results-caption"></p>
+          </article>
+          <article class="sampling-panel">
+            <h3>What a run hands you</h3>
+            <p class="muted found-intro" id="found-intro"></p>
+            <ol class="found-list" id="found-list"></ol>
+          </article>
         </div>
       </section>
 
@@ -1997,91 +1884,10 @@
 
     <script>
       const page = window.QUICKSCOPE_PAGE;
-      if (window.QUICKSCOPE_RESULTS?.comparisons?.length) {
-        page.comparisons = window.QUICKSCOPE_RESULTS.comparisons;
-      } else {
-        page.comparisons = page.runs.map((run) => ({
-          id: run.id,
-          benchmark: run.benchmark,
-          model: run.model,
-          utility: run.utility,
-          summary: run.summary,
-          metrics: run.metrics,
-          methods: [{
-            id: run.id,
-            label: run.method,
-            kind: "quickscope",
-            threshold: run.threshold,
-            sampled: Number(String(run.metrics?.[0]?.value || "0").replace(/,/g, "")),
-            maxCalls: Math.max(...(run.configTraces?.[0]?.points || run.series).map((point) => point.calls ?? point.c)),
-            series: (run.topConfigs || []).map((config, index) => ({
-              k: index + 1,
-              mean: config.mean,
-              min: config.mean,
-            })),
-            topConfigs: run.topConfigs || [],
-          }],
-        }));
-      }
       function cssColor(name) {
         return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       }
 
-      function readThemeColors() {
-        return {
-          ink: cssColor("--ink"),
-          muted: cssColor("--muted"),
-          paper: cssColor("--paper"),
-          panel: cssColor("--panel"),
-          line: cssColor("--line"),
-          red: cssColor("--red"),
-          green: cssColor("--green"),
-          blue: cssColor("--blue"),
-          orange: cssColor("--orange"),
-          accent: cssColor("--accent"),
-        };
-      }
-
-      let colors = readThemeColors();
-      let methodColors = getMethodColors();
-
-      function getMethodColors() {
-        return [
-          colors.accent,
-          colors.green,
-          colors.orange,
-          colors.blue,
-          colors.red,
-          colors.ink,
-        ];
-      }
-
-      const defaultComparison =
-        page.comparisons.find((comparison) =>
-          comparison.benchmark === "DyVal" &&
-          comparison.model === "gpt-5.4-nano" &&
-          comparison.utility === "error-rate"
-        ) || page.comparisons[0];
-
-      const state = {
-        comparison: defaultComparison,
-        topK: 40,
-        hoverK: null,
-        hoverMethod: null,
-        chartArea: null,
-        hiddenMethods: new Set(),
-      };
-
-      const chart = document.getElementById("chart");
-      const ctx = chart.getContext("2d");
-      const chartTooltip = document.getElementById("chart-tooltip");
-      const selects = {
-        benchmark: document.getElementById("benchmark"),
-        model: document.getElementById("model"),
-        utility: document.getElementById("utility"),
-      };
-      const configCount = document.getElementById("config-count");
-      const configCountValue = document.getElementById("config-count-value");
       const themeToggle = document.getElementById("theme-toggle");
       const themeToggleLabel = document.getElementById("theme-toggle-label");
 
@@ -2096,9 +1902,7 @@
             // Theme still changes for the current page when storage is unavailable.
           }
         }
-        colors = readThemeColors();
-        methodColors = getMethodColors();
-        if (state.comparison) renderComparison();
+        if (resultsView?.bench) renderResults();
         if (budgetView?.worlds?.[budgetView.size]) {
           renderBudgetComparison();
           renderUtilityFields();
@@ -2701,362 +2505,318 @@
         setStep(0);
       }
 
-      function unique(field, comparisons = page.comparisons) {
-        return [...new Set(comparisons.map((comparison) => comparison[field]))].sort();
+      // Results by budget, from site/assets/budget-results.js (built by site/tools/build_budget_results.py).
+      const RESULT_METRICS = {
+        high_explored: {
+          label: "Hard found",
+          title: "Hard configurations found",
+          caption: (tau) => `How many configurations each method sampled whose held-out error rate is at least ${tau}.`,
+          format: (v) => Math.round(v).toLocaleString(),
+        },
+        topk_true: {
+          label: "Top 10 that hold up",
+          title: "Top 10 that are really hard",
+          caption: (tau) => `Of the ten configurations each method ranks hardest, how many really have a held-out error rate of at least ${tau}.`,
+          format: (v) => `${Math.round(v)} / 10`,
+          max: 10,
+        },
+        topk_gt_mean: {
+          label: "Error of top 10",
+          title: "True error rate of the top 10",
+          caption: () => "The held-out error rate of the ten configurations each method ranks hardest.",
+          format: (v) => v.toFixed(2),
+          max: 1,
+        },
+      };
+      const BASELINE_STYLE = {
+        uniform: { label: "Uniform", color: "--m-uniform" },
+        successive_halving: { label: "Successive halving", color: "--m-sh" },
+        hyperband: { label: "Hyperband", color: "--m-hb" },
+        apt: { label: "APT", color: "--m-apt" },
+        smac_ac: { label: "SMAC", color: "--m-smac" },
+      };
+      // Benchmark keys in the budget file, and their names in the older run data used for the found list.
+      const RESULT_BENCH_NAMES = { dyval: "DyVal", steer_me: "STEER-ME", grid: "Grid Reasoning" };
+      var resultsView = { bench: null, metric: "high_explored", area: null, hover: null };
+
+      function resultSeries() {
+        const data = window.QUICKSCOPE_BUDGET;
+        const rows = data.rows.filter((row) => row.benchmark === resultsView.bench && row[resultsView.metric] != null);
+        const budgets = [...new Set(rows.map((row) => row.budget))].sort((a, b) => a - b);
+        const band = budgets.map((budget) => {
+          const values = rows.filter((row) => row.budget === budget && data.quickscope.includes(row.method)).map((row) => row[resultsView.metric]);
+          return values.length ? { budget, min: Math.min(...values), max: Math.max(...values) } : null;
+        }).filter(Boolean);
+        const lines = data.baselines.map((method) => ({
+          method,
+          points: rows.filter((row) => row.method === method).sort((a, b) => a.budget - b.budget).map((row) => ({ budget: row.budget, value: row[resultsView.metric] })),
+        })).filter((line) => line.points.length);
+        return { budgets, band, lines, tau: rows[0]?.tau };
       }
 
-      function fillSelect(select, values, selected) {
-        select.innerHTML = "";
-        values.forEach((value) => {
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          option.selected = value === selected;
-          select.appendChild(option);
+      function drawResults() {
+        const canvas = document.getElementById("results-chart");
+        const width = canvas.parentElement.clientWidth;
+        if (width <= 0) return;
+        const height = Math.round(Math.min(380, Math.max(240, width * 0.55)));
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        canvas.style.height = `${height}px`;
+        const g = canvas.getContext("2d");
+        g.setTransform(ratio, 0, 0, ratio, 0, 0);
+        g.clearRect(0, 0, width, height);
+
+        const metric = RESULT_METRICS[resultsView.metric];
+        const { budgets, band, lines } = resultSeries();
+        if (!budgets.length) return;
+        const labelRoom = width > 560 ? 118 : 16;
+        const area = { left: 44, right: width - labelRoom, top: 12, bottom: height - 30 };
+        const minX = Math.log10(budgets[0]);
+        const maxX = Math.log10(budgets[budgets.length - 1]);
+        const values = [...band.map((p) => p.max), ...lines.flatMap((line) => line.points.map((p) => p.value))];
+        const maxY = metric.max ?? niceCeil(Math.max(...values));
+        const sx = (budget) => area.left + ((Math.log10(budget) - minX) / (maxX - minX || 1)) * (area.right - area.left);
+        const sy = (value) => area.bottom - (value / maxY) * (area.bottom - area.top);
+        resultsView.area = { ...area, sx, budgets };
+
+        const ink = cssColor("--ink");
+        const muted = cssColor("--muted");
+        const line = cssColor("--line");
+        const accent = cssColor("--accent");
+        g.font = "11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        g.lineWidth = 1;
+        g.strokeStyle = line;
+        g.fillStyle = muted;
+        g.textAlign = "right";
+        const ticks = maxY === 10 ? 5 : 4;
+        for (let i = 0; i <= ticks; i += 1) {
+          const v = (maxY * i) / ticks;
+          const y = sy(v);
+          g.beginPath();
+          g.moveTo(area.left, y);
+          g.lineTo(area.right, y);
+          g.stroke();
+          g.fillText(metric.max === 1 ? v.toFixed(2) : Math.round(v).toLocaleString(), area.left - 6, y + 4);
+        }
+        g.textAlign = "center";
+        budgets.forEach((budget) => {
+          g.fillText(budget >= 1000 ? `${budget / 1000}k` : String(budget), sx(budget), area.bottom + 16);
         });
-      }
-
-      function filteredComparisons() {
-        return page.comparisons.filter((comparison) =>
-          comparison.benchmark === selects.benchmark.value &&
-          comparison.model === selects.model.value &&
-          comparison.utility === selects.utility.value
-        );
-      }
-
-      function syncFilters(changed) {
-        const current = {
-          benchmark: selects.benchmark.value || state.comparison.benchmark,
-          model: selects.model.value || state.comparison.model,
-          utility: selects.utility.value || state.comparison.utility,
-        };
-
-        if (!changed || changed === "benchmark") {
-          fillSelect(selects.benchmark, unique("benchmark"), current.benchmark);
+        if (width > 560) {
+          g.textAlign = "right";
+          g.fillText("model calls", area.right, height - 2);
         }
 
-        const byBenchmark = page.comparisons.filter((comparison) => comparison.benchmark === selects.benchmark.value);
-        if (!byBenchmark.some((comparison) => comparison.model === current.model)) current.model = byBenchmark[0].model;
-        fillSelect(selects.model, unique("model", byBenchmark), current.model);
+        // QuickScope variants: one band from the weakest to the strongest variant.
+        g.beginPath();
+        band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.max)) : g.moveTo(sx(p.budget), sy(p.max))));
+        [...band].reverse().forEach((p) => g.lineTo(sx(p.budget), sy(p.min)));
+        g.closePath();
+        g.globalAlpha = 0.3;
+        g.fillStyle = accent;
+        g.fill();
+        g.globalAlpha = 1;
+        g.strokeStyle = accent;
+        g.lineWidth = 2;
+        ["max", "min"].forEach((key) => {
+          g.beginPath();
+          band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p[key])) : g.moveTo(sx(p.budget), sy(p[key]))));
+          g.stroke();
+        });
 
-        const byModel = byBenchmark.filter((comparison) => comparison.model === selects.model.value);
-        if (!byModel.some((comparison) => comparison.utility === current.utility)) current.utility = byModel[0].utility;
-        fillSelect(selects.utility, unique("utility", byModel), current.utility);
-
-        state.comparison = filteredComparisons()[0] || byModel[0] || page.comparisons[0];
-        renderComparison();
-      }
-
-      Object.entries(selects).forEach(([field, select]) => {
-        select.addEventListener("change", () => syncFilters(field));
-      });
-
-      function methodAtK(method, k) {
-        if (!method.series.length) return null;
-        return method.series[Math.min(k, method.series.length) - 1];
-      }
-
-      function renderComparison() {
-        const comparison = state.comparison;
-        document.getElementById("chart-caption").textContent =
-          `${comparison.utility}. Each curve ranks the configurations found by that method and shows cumulative mean utility through the top K. Higher is harder.`;
-        const maxK = Math.max(...comparison.methods.map((method) => method.series.length));
-        configCount.max = String(Math.max(5, maxK));
-        configCount.value = String(Math.min(state.topK, Number(configCount.max)));
-        state.topK = Number(configCount.value);
-        configCountValue.textContent = `top ${state.topK}`;
-
-        state.hiddenMethods.clear();
-
-        const legend = document.getElementById("chart-legend");
-        legend.innerHTML = "";
-        comparison.methods.forEach((method, index) => {
-          const color = methodColors[index % methodColors.length];
-          const node = document.createElement("span");
-          node.style.cursor = "pointer";
-          node.dataset.methodId = method.id;
-          node.innerHTML = `<i class="swatch" style="background: ${color}"></i>${method.label}`;
-          node.addEventListener("click", () => {
-            if (state.hiddenMethods.has(method.id)) {
-              state.hiddenMethods.delete(method.id);
-              node.style.opacity = "1";
-            } else {
-              state.hiddenMethods.add(method.id);
-              node.style.opacity = "0.35";
-            }
-            drawChart();
+        const ends = [];
+        lines.forEach(({ method, points }) => {
+          const color = cssColor(BASELINE_STYLE[method].color);
+          g.strokeStyle = color;
+          g.fillStyle = color;
+          g.lineWidth = 1.5;
+          g.beginPath();
+          points.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.value)) : g.moveTo(sx(p.budget), sy(p.value))));
+          g.stroke();
+          points.forEach((p) => {
+            g.beginPath();
+            g.rect(sx(p.budget) - 2.5, sy(p.value) - 2.5, 5, 5);
+            g.fill();
           });
-          legend.appendChild(node);
+          const last = points[points.length - 1];
+          ends.push({ y: sy(last.value), label: BASELINE_STYLE[method].label, color });
         });
+        const top = band[band.length - 1];
+        ends.push({ y: sy((top.min + top.max) / 2), label: "QuickScope", color: cssColor("--accent-strong"), bold: true });
 
-        const rows = document.getElementById("side-configs");
-        rows.innerHTML = "";
-        let detailId = 0;
-        const rankedConfigs = comparison.methods
-          .flatMap((method) => method.topConfigs.map((config) => ({ method, config })))
-          .sort((left, right) => {
-            const meanDelta = Number(right.config.mean) - Number(left.config.mean);
-            if (meanDelta) return meanDelta;
-            const lcbDelta = Number(right.config.lcb ?? -Infinity) - Number(left.config.lcb ?? -Infinity);
-            if (lcbDelta) return lcbDelta;
-            return left.method.label.localeCompare(right.method.label) || left.config.name.localeCompare(right.config.name);
+        // Direct labels at the right, nudged apart so they never overlap.
+        if (labelRoom > 20) {
+          ends.sort((a, b) => a.y - b.y);
+          for (let i = 1; i < ends.length; i += 1) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 13);
+          g.textAlign = "left";
+          ends.forEach((end) => {
+            g.fillStyle = end.color;
+            g.font = `${end.bold ? "600 " : ""}11px Poppins, ui-sans-serif, sans-serif`;
+            g.fillText(end.label, area.right + 8, Math.min(height - 4, end.y + 4));
           });
-        rankedConfigs.forEach(({ method, config }, index) => {
-          detailId += 1;
-          const rowId = `config-detail-${detailId}`;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${method.label}</td>
-              <td>${Number(config.mean).toFixed(2)}</td>
-              <td>
-                <button class="config-toggle" aria-expanded="false" aria-controls="${rowId}" title="${escapeHtml(config.name)}">?</button>
-              </td>
-            `;
-          rows.appendChild(tr);
-          const detail = document.createElement("tr");
-          detail.className = "config-detail-row";
-          detail.id = rowId;
-          detail.hidden = true;
-          detail.innerHTML = `<td colspan="4"><p class="config-detail">${escapeHtml(config.name)}</p></td>`;
-          rows.appendChild(detail);
-        });
-
-        drawChart();
-      }
-
-      function scale(value, min, max, outMin, outMax) {
-        if (max === min) return outMin;
-        return outMin + ((value - min) / (max - min)) * (outMax - outMin);
-      }
-
-      function drawLine(points, key, area, color, width = 2) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        points.forEach((point, index) => {
-          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
-          const y = scale(point[key], area.minY, area.maxY, area.bottom, area.top);
-          if (index === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-
-      function drawBand(points, area, color) {
-        if (points.length < 2) return;
-        if (points.some((point) => point.lcb === undefined)) return;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        points.forEach((point, index) => {
-          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
-          const y = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
-          if (index === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        [...points].reverse().forEach((point) => {
-          const x = scale(point.k, area.minX, area.maxX, area.left, area.right);
-          const y = scale(point.lcb, area.minY, area.maxY, area.bottom, area.top);
-          ctx.lineTo(x, y);
-        });
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      function hexToRgba(hex, alpha) {
-        const value = hex.replace("#", "");
-        const r = parseInt(value.slice(0, 2), 16);
-        const g = parseInt(value.slice(2, 4), 16);
-        const b = parseInt(value.slice(4, 6), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-      }
-
-      function drawChart() {
-        const comparison = state.comparison;
-        const topK = Math.max(1, Math.min(state.topK, Math.max(...comparison.methods.map((method) => method.series.length))));
-        const visibleValues = comparison.methods.flatMap((method) =>
-          state.hiddenMethods.has(method.id) ? [] :
-          method.series.slice(0, topK).flatMap((point) => [point.mean, point.lcb ?? point.mean])
-        );
-        let dataMin = Math.min(...visibleValues);
-        let dataMax = Math.max(...visibleValues);
-        if (!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) {
-          dataMin = 0;
-          dataMax = 1;
         }
-        let yMin = 0;
-        let yMax = 1;
-        if (comparison.utility === "complexity-weighted error") {
-          yMax = dataMax > 0.5 ? Math.min(1, dataMax + 0.05) : 0.5;
-        } else {
-          const span = Math.max(0.08, dataMax - dataMin);
-          yMin = Math.max(0, dataMin - span * 0.18);
-          yMax = Math.min(1, dataMax + span * 0.18);
-          if (dataMin > 0.28) yMin = Math.max(0.2, yMin);
-          if (yMax - yMin < 0.16) {
-            const mid = (yMin + yMax) / 2;
-            yMin = Math.max(0, mid - 0.08);
-            yMax = Math.min(1, mid + 0.08);
-          }
+
+        if (resultsView.hover != null) {
+          const x = sx(resultsView.hover);
+          g.strokeStyle = ink;
+          g.globalAlpha = 0.35;
+          g.lineWidth = 1;
+          g.beginPath();
+          g.moveTo(x, area.top);
+          g.lineTo(x, area.bottom);
+          g.stroke();
+          g.globalAlpha = 1;
         }
-        const dpr = window.devicePixelRatio || 1;
-        const rect = chart.getBoundingClientRect();
-        chart.width = Math.round(rect.width * dpr);
-        chart.height = Math.round(rect.height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        const width = rect.width;
-        const height = rect.height;
-        const area = {
-          left: 54,
-          right: width - 24,
-          top: 24,
-          bottom: height - 46,
-          minX: 1,
-          maxX: topK,
-          minY: yMin,
-          maxY: yMax,
-        };
-        state.chartArea = area;
-
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = colors.panel;
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.strokeStyle = colors.line;
-        ctx.lineWidth = 1;
-        ctx.font = "12px Poppins, ui-sans-serif, sans-serif";
-        ctx.fillStyle = colors.muted;
-        for (let i = 0; i <= 4; i += 1) {
-          const yValue = area.minY + ((area.maxY - area.minY) * i) / 4;
-          const y = scale(yValue, area.minY, area.maxY, area.bottom, area.top);
-          ctx.beginPath();
-          ctx.moveTo(area.left, y);
-          ctx.lineTo(area.right, y);
-          ctx.stroke();
-          ctx.fillText(yValue.toFixed(2), 12, y + 4);
-        }
-        for (let i = 0; i <= 4; i += 1) {
-          const xValue = area.minX + ((area.maxX - area.minX) * i) / 4;
-          const x = scale(xValue, area.minX, area.maxX, area.left, area.right);
-          ctx.beginPath();
-          ctx.moveTo(x, area.top);
-          ctx.lineTo(x, area.bottom);
-          ctx.stroke();
-          ctx.fillText(`${Math.round(xValue)}`, x - 8, area.bottom + 24);
-        }
-        ctx.fillText("top K configurations", area.right - 130, area.bottom + 38);
-
-        comparison.methods.forEach((method, index) => {
-          if (state.hiddenMethods.has(method.id)) return;
-          const points = method.series.slice(0, topK);
-          drawBand(points, area, hexToRgba(methodColors[index % methodColors.length], 0.09));
-        });
-
-        comparison.methods.forEach((method, index) => {
-          if (state.hiddenMethods.has(method.id)) return;
-          const points = method.series.slice(0, topK);
-          const color = methodColors[index % methodColors.length];
-          if (method.kind === "uniform") {
-            ctx.setLineDash([4, 5]);
-            drawLine(points, "mean", area, color, 1.6);
-            ctx.setLineDash([]);
-          } else {
-            drawLine(points, "mean", area, color, 2.6);
-          }
-        });
-
-        const x = scale(topK, area.minX, area.maxX, area.left, area.right);
-        ctx.strokeStyle = hexToRgba(colors.ink, 0.45);
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, area.top);
-        ctx.lineTo(x, area.bottom);
-        ctx.stroke();
-
-        const markerK = state.hoverK || topK;
-        const markerX = scale(markerK, area.minX, area.maxX, area.left, area.right);
-        ctx.strokeStyle = hexToRgba(colors.ink, state.hoverK ? 0.72 : 0.22);
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(markerX, area.top);
-        ctx.lineTo(markerX, area.bottom);
-        ctx.stroke();
-        comparison.methods.forEach((method, index) => {
-          if (state.hiddenMethods.has(method.id)) return;
-          const point = methodAtK(method, markerK);
-          if (!point) return;
-          const markerY = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
-          ctx.fillStyle = methodColors[index % methodColors.length];
-          ctx.beginPath();
-          ctx.arc(markerX, markerY, method.id === state.hoverMethod ? 5 : 3.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
       }
 
-      configCount.addEventListener("input", (event) => {
-        state.topK = Number(event.target.value);
-        configCountValue.textContent = `top ${state.topK}`;
-        drawChart();
-      });
+      function niceCeil(value) {
+        if (value <= 0) return 1;
+        const step = 10 ** Math.floor(Math.log10(value));
+        return Math.ceil(value / step) * step;
+      }
 
-      document.getElementById("side-configs").addEventListener("click", (event) => {
-        const button = event.target.closest(".config-toggle");
-        if (!button) return;
-        const detail = document.getElementById(button.getAttribute("aria-controls"));
-        const expanded = button.getAttribute("aria-expanded") === "true";
-        button.setAttribute("aria-expanded", String(!expanded));
-        detail.hidden = expanded;
-      });
+      function renderResultsText() {
+        const data = window.QUICKSCOPE_BUDGET;
+        const metric = RESULT_METRICS[resultsView.metric];
+        const { tau } = resultSeries();
+        document.getElementById("results-placeholder").hidden = !data.placeholder;
+        document.getElementById("results-title").textContent = metric.title;
+        document.getElementById("results-caption").textContent =
+          `${metric.caption(tau)} Budgets are in model calls; the band spans the QuickScope variants${data.model ? `, all on ${data.model}` : ""}.`;
+        document.getElementById("results-legend").innerHTML = [
+          `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
+          ...data.baselines.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
+        ].join("");
+        document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
+          button.setAttribute("aria-checked", String(button.dataset.bench === resultsView.bench));
+        });
+        document.querySelectorAll("#metric-switch [data-metric]").forEach((button) => {
+          button.setAttribute("aria-checked", String(button.dataset.metric === resultsView.metric));
+        });
+        renderFoundList();
+      }
 
-      chart.addEventListener("mousemove", (event) => {
-        const area = state.chartArea;
-        if (!area) return;
-        const rect = chart.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
-          state.hoverK = null;
-          state.hoverMethod = null;
-          chartTooltip.style.display = "none";
-          drawChart();
+      // The found list uses the older QuickScope runs in assets/results-data.js: real output,
+      // for one model and the error-rate utility.
+      function prettyConfig(bench, name) {
+        const parts = name.split(" / ");
+        if (bench === "dyval") {
+          const [task, depth, children, order] = parts;
+          const orderName = { "order 1": "topological order", "order 2": "reversed order", "order 3": "random order" }[order] || order;
+          return [task.replace(/_/g, " "), depth, children?.replace(/children (\d+)/, "$1 children"), orderName].filter(Boolean).join(" · ");
+        }
+        return parts.map((part) => part.replace(/_/g, " ").replace(/\d+\.\d{3,}/g, (n) => Number(n).toFixed(2))).join(" · ");
+      }
+
+      function renderFoundList() {
+        const list = document.getElementById("found-list");
+        const intro = document.getElementById("found-intro");
+        const benchName = RESULT_BENCH_NAMES[resultsView.bench];
+        const run = (window.QUICKSCOPE_RESULTS?.comparisons || []).find((c) =>
+          c.benchmark === benchName && c.model === "gpt-5.4-nano" && c.utility === "error-rate");
+        const method = run?.methods.find((m) => m.label.startsWith("adaptive cert")) || run?.methods.find((m) => m.kind === "quickscope");
+        if (!method) {
+          intro.textContent = "No run to show for this benchmark yet.";
+          list.innerHTML = "";
           return;
         }
-        const topK = Math.max(1, Math.min(state.topK, Math.max(...state.comparison.methods.map((method) => method.series.length))));
-        const hoverK = Math.max(1, Math.min(topK, Math.round(scale(x, area.left, area.right, area.minX, area.maxX))));
-        let nearest = null;
-        state.comparison.methods.forEach((method, index) => {
-          const point = methodAtK(method, hoverK);
-          if (!point) return;
-          const pointY = scale(point.mean, area.minY, area.maxY, area.bottom, area.top);
-          const distance = Math.abs(pointY - y);
-          if (!nearest || distance < nearest.distance) {
-            nearest = { method, index, point, distance };
-          }
-        });
-        state.hoverK = hoverK;
-        state.hoverMethod = nearest?.method.id || null;
-        const rows = state.comparison.methods.map((method) => {
-          const point = methodAtK(method, hoverK);
-          return point ? `<div><span>${method.label}</span><span>${Number(point.mean).toFixed(3)}</span></div>` : "";
+        const seen = new Set();
+        const configs = method.topConfigs.filter((config) => {
+          const key = prettyConfig(resultsView.bench, config.name);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 6);
+        const threshold = method.threshold;
+        intro.textContent = `The hardest configurations a QuickScope run found on ${benchName} for gpt-5.4-nano${threshold ? `, certified at ${threshold}` : ""}.`;
+        list.innerHTML = configs.map((config) => {
+          const certified = threshold != null && config.lcb >= threshold;
+          return `<li class="${certified ? "is-certified" : ""}">
+            <span class="found-name">${escapeHtml(prettyConfig(resultsView.bench, config.name))}</span>
+            <span class="found-stats">
+              <span>error ${config.mean.toFixed(2)}</span>
+              <span>lower bound ${config.lcb.toFixed(2)}</span>
+              <span>${config.n.toLocaleString()} calls</span>
+              ${certified ? '<span class="cert">Certified</span>' : ""}
+            </span>
+          </li>`;
         }).join("");
-        chartTooltip.innerHTML = `<strong>${nearest?.method.label || "Top K"} at K=${hoverK}</strong>${rows}`;
-        chartTooltip.style.display = "block";
-        chartTooltip.style.left = `${Math.min(rect.width - 280, Math.max(12, x + 14))}px`;
-        chartTooltip.style.top = `${Math.min(rect.height - 120, Math.max(12, y + 14))}px`;
-        drawChart();
-      });
+      }
 
-      chart.addEventListener("mouseleave", () => {
-        state.hoverK = null;
-        state.hoverMethod = null;
-        chartTooltip.style.display = "none";
-        drawChart();
-      });
+      function renderResults() {
+        if (!resultsView.bench) return;
+        renderResultsText();
+        drawResults();
+      }
+
+      function initResults() {
+        const data = window.QUICKSCOPE_BUDGET;
+        if (!data) return;
+        resultsView.bench = Object.keys(data.benchmarks)[0];
+        const benchSwitch = document.getElementById("bench-switch");
+        Object.entries(data.benchmarks).forEach(([key, name]) => {
+          benchSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-bench="${key}">${escapeHtml(name)}</button>`);
+        });
+        const metricSwitch = document.getElementById("metric-switch");
+        Object.entries(RESULT_METRICS).forEach(([key, metric]) => {
+          metricSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-metric="${key}">${metric.label}</button>`);
+        });
+        benchSwitch.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-bench]");
+          if (!button) return;
+          resultsView.bench = button.dataset.bench;
+          renderResults();
+        });
+        metricSwitch.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-metric]");
+          if (!button) return;
+          resultsView.metric = button.dataset.metric;
+          renderResults();
+        });
+
+        const canvas = document.getElementById("results-chart");
+        const tip = document.getElementById("results-tip");
+        canvas.addEventListener("mousemove", (event) => {
+          const area = resultsView.area;
+          if (!area) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          if (x < area.left - 10 || x > area.right + 10) {
+            resultsView.hover = null;
+            tip.hidden = true;
+            drawResults();
+            return;
+          }
+          const budget = area.budgets.reduce((best, b) => (Math.abs(area.sx(b) - x) < Math.abs(area.sx(best) - x) ? b : best));
+          resultsView.hover = budget;
+          const metric = RESULT_METRICS[resultsView.metric];
+          const { band, lines } = resultSeries();
+          const qs = band.find((p) => p.budget === budget);
+          const rows = [
+            qs ? `<div><span>QuickScope</span><span>${metric.format(qs.min)}–${metric.format(qs.max)}</span></div>` : "",
+            ...lines.map((line) => {
+              const point = line.points.find((p) => p.budget === budget);
+              return point ? `<div><span>${BASELINE_STYLE[line.method].label}</span><span>${metric.format(point.value)}</span></div>` : "";
+            }),
+          ].join("");
+          tip.innerHTML = `<strong>${budget.toLocaleString()} calls</strong>${rows}`;
+          tip.hidden = false;
+          const left = area.sx(budget) + 12;
+          tip.style.left = `${Math.min(rect.width - tip.offsetWidth - 4, left)}px`;
+          tip.style.top = `${area.top + 4}px`;
+          drawResults();
+        });
+        canvas.addEventListener("mouseleave", () => {
+          resultsView.hover = null;
+          tip.hidden = true;
+          drawResults();
+        });
+        renderResults();
+      }
 
       window.addEventListener("resize", () => {
-        drawChart();
+        drawResults();
         renderBudgetComparison();
         renderUtilityFields();
       });
@@ -3066,7 +2826,7 @@
       initParamLinks();
       initBudget();
       renderUtilityFields();
-      syncFilters();
+      initResults();
     </script>
   </body>
 </html>
