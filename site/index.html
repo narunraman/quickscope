@@ -1367,7 +1367,6 @@
       .results-grid {
         display: grid;
         gap: 12px;
-        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
       }
 
       .results-chart-wrap {
@@ -1444,7 +1443,8 @@
 
       .found-list {
         display: grid;
-        gap: 6px;
+        gap: 6px 18px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
         list-style: none;
         margin: 0;
         padding: 0;
@@ -1650,8 +1650,7 @@
         }
 
         .sampling-compare,
-        .utility-compare,
-        .results-grid {
+        .utility-compare {
           grid-template-columns: 1fr;
         }
       }
@@ -1852,6 +1851,9 @@
           Placeholder numbers, shaped like the paper's results. The real results replace them.
         </p>
         <div class="results-controls">
+          <div class="size-switch" role="radiogroup" aria-label="Model" id="model-switch">
+            <span class="switch-label">Model</span>
+          </div>
           <div class="size-switch" role="radiogroup" aria-label="Benchmark" id="bench-switch">
             <span class="switch-label">Benchmark</span>
           </div>
@@ -2537,11 +2539,12 @@
       };
       // Benchmark keys in the budget file, and their names in the older run data used for the found list.
       const RESULT_BENCH_NAMES = { dyval: "DyVal", steer_me: "STEER-ME", grid: "Grid Reasoning" };
-      var resultsView = { bench: null, metric: "high_explored", area: null, hover: null };
+      var resultsView = { model: null, bench: null, metric: "high_explored", area: null, hover: null };
 
       function resultSeries() {
         const data = window.QUICKSCOPE_BUDGET;
-        const rows = data.rows.filter((row) => row.benchmark === resultsView.bench && row[resultsView.metric] != null);
+        const rows = data.rows.filter((row) =>
+          row.model === resultsView.model && row.benchmark === resultsView.bench && row[resultsView.metric] != null);
         const budgets = [...new Set(rows.map((row) => row.budget))].sort((a, b) => a - b);
         const band = budgets.map((budget) => {
           const values = rows.filter((row) => row.budget === budget && data.quickscope.includes(row.method)).map((row) => row[resultsView.metric]);
@@ -2558,7 +2561,7 @@
         const canvas = document.getElementById("results-chart");
         const width = canvas.parentElement.clientWidth;
         if (width <= 0) return;
-        const height = Math.round(Math.min(380, Math.max(240, width * 0.55)));
+        const height = Math.round(Math.min(420, Math.max(240, width * 0.42)));
         const ratio = window.devicePixelRatio || 1;
         canvas.width = Math.round(width * ratio);
         canvas.height = Math.round(height * ratio);
@@ -2683,11 +2686,14 @@
         document.getElementById("results-placeholder").hidden = !data.placeholder;
         document.getElementById("results-title").textContent = metric.title;
         document.getElementById("results-caption").textContent =
-          `${metric.caption(tau)} Budgets are in model calls; the band spans the QuickScope variants${data.model ? `, all on ${data.model}` : ""}.`;
+          `${metric.caption(tau)} Budgets are in model calls; the band spans the QuickScope variants, all evaluating ${resultsView.model}.`;
         document.getElementById("results-legend").innerHTML = [
           `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
           ...data.baselines.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
         ].join("");
+        document.querySelectorAll("#model-switch [data-model]").forEach((button) => {
+          button.setAttribute("aria-checked", String(button.dataset.model === resultsView.model));
+        });
         document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
           button.setAttribute("aria-checked", String(button.dataset.bench === resultsView.bench));
         });
@@ -2714,10 +2720,14 @@
         const intro = document.getElementById("found-intro");
         const benchName = RESULT_BENCH_NAMES[resultsView.bench];
         const run = (window.QUICKSCOPE_RESULTS?.comparisons || []).find((c) =>
-          c.benchmark === benchName && c.model === "gpt-5.4-nano" && c.utility === "error-rate");
-        const method = run?.methods.find((m) => m.label.startsWith("adaptive cert")) || run?.methods.find((m) => m.kind === "quickscope");
+          c.benchmark === benchName && c.model === resultsView.model && c.utility === "error-rate");
+        const quickscope = run?.methods.filter((m) => m.kind === "quickscope") || [];
+        // Prefer a certifying run, adaptive first, so the list can show which configurations were certified.
+        const method = quickscope.find((m) => m.label.startsWith("adaptive cert"))
+          || quickscope.filter((m) => m.threshold != null).sort((a, b) => b.threshold - a.threshold)[0]
+          || quickscope[0];
         if (!method) {
-          intro.textContent = "No run to show for this benchmark yet.";
+          intro.textContent = `No QuickScope run on ${benchName} for ${resultsView.model} yet.`;
           list.innerHTML = "";
           return;
         }
@@ -2729,7 +2739,7 @@
           return true;
         }).slice(0, 6);
         const threshold = method.threshold;
-        intro.textContent = `The hardest configurations a QuickScope run found on ${benchName} for gpt-5.4-nano${threshold ? `, certified at ${threshold}` : ""}.`;
+        intro.textContent = `The hardest configurations a QuickScope run found on ${benchName} for ${resultsView.model}${threshold ? `, certified at ${threshold}` : ""}.`;
         list.innerHTML = configs.map((config) => {
           const certified = threshold != null && config.lcb >= threshold;
           return `<li class="${certified ? "is-certified" : ""}">
@@ -2753,7 +2763,18 @@
       function initResults() {
         const data = window.QUICKSCOPE_BUDGET;
         if (!data) return;
+        resultsView.model = data.models[0];
         resultsView.bench = Object.keys(data.benchmarks)[0];
+        const modelSwitch = document.getElementById("model-switch");
+        data.models.forEach((model) => {
+          modelSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-model="${escapeHtml(model)}">${escapeHtml(model)}</button>`);
+        });
+        modelSwitch.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-model]");
+          if (!button) return;
+          resultsView.model = button.dataset.model;
+          renderResults();
+        });
         const benchSwitch = document.getElementById("bench-switch");
         Object.entries(data.benchmarks).forEach(([key, name]) => {
           benchSwitch.insertAdjacentHTML("beforeend", `<button type="button" role="radio" data-bench="${key}">${escapeHtml(name)}</button>`);
