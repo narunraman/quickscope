@@ -2678,8 +2678,15 @@
           g.fillText(metric.max === 1 ? v.toFixed(2) : Math.round(v).toLocaleString(), area.left - 6, y + 4);
         }
         g.textAlign = "center";
-        budgets.forEach((budget) => {
-          g.fillText(budget >= 1000 ? `${budget / 1000}k` : String(budget), sx(budget), area.bottom + 16);
+        // Label from the right so the final budget always shows; skip any label that would collide.
+        let nextLeft = Infinity;
+        [...budgets].reverse().forEach((budget) => {
+          const text = budget >= 1000 ? `${budget / 1000}k` : String(budget);
+          const half = g.measureText(text).width / 2;
+          const x = sx(budget);
+          if (x + half > nextLeft - 6) return;
+          g.fillText(text, x, area.bottom + 16);
+          nextLeft = x - half;
         });
         if (width > 560) {
           g.textAlign = "right";
@@ -2866,7 +2873,7 @@
           const certifiedCount = found.configs.filter((config) => config.certified).length;
           intro.textContent = `The configurations a QuickScope run on ${benchName} ranks hardest for ${resultsView.model}, by the lower bound on their error rate. `
             + (certifiedCount
-              ? `${certifiedCount} cleared the ${found.tau} threshold and are certified.`
+              ? `${certifiedCount} cleared the ${found.tau} threshold and ${certifiedCount === 1 ? "is" : "are"} certified.`
               : `None cleared the ${found.tau} threshold for certification in this run.`);
           list.innerHTML = found.configs.map((config) => foundItem(describeParams(resultsView.bench, config.params), config, config.certified)).join("");
           return;
