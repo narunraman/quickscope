@@ -62,16 +62,19 @@ def from_csv(model: str, path: Path) -> list[dict]:
 def placeholder() -> list[dict]:
     """Made-up curves shaped like the paper's: the QuickScope variants climb faster."""
     rng = random.Random(4)
-    models = {"gpt-5.4-nano": 1.0, "gpt-5-mini": 0.7}
+    # Open-weight models get every baseline; API models only uniform sampling, as in the real campaigns.
+    models = {"gemma-3-27b-instruct": (0.85, None), "gpt-5.4-nano": (1.0, {"uniform"}), "gpt-5-mini": (0.7, {"uniform"})}
     budgets = [250, 500, 1000, 2000, 5000, 10000, 20000]
     speed = {"coup_nocert": 1.0, "coup_cert": 1.08, "coup_adaptive": 1.12, "uniform": 0.25,
              "successive_halving": 0.45, "hyperband": 0.42, "apt": 0.6, "smac_ac": 0.5}
     hard_configs = {"dyval": 180, "steer_me": 40, "grid": 260}
     taus = {"dyval": 0.9, "steer_me": 0.7, "grid": 0.9}
     rows = []
-    for model, hardness in models.items():
+    for model, (hardness, baselines) in models.items():
         for bench in BENCHMARKS:
             for method, s in speed.items():
+                if baselines is not None and method in BASELINES and method not in baselines:
+                    continue
                 for b in budgets:
                     progress = 1 - math.exp(-s * b / 6000)
                     noise = 1 + rng.uniform(-0.06, 0.06)

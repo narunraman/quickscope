@@ -1479,6 +1479,14 @@
         opacity: 0.45;
       }
 
+      .coverage-note {
+        border-left: 3px solid var(--orange);
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin: 0 0 0.9rem;
+        padding-left: 0.6rem;
+      }
+
       .found-intro {
         font-size: 0.8rem;
         margin: 0.4rem 0 0.7rem;
@@ -1913,6 +1921,7 @@
               <div class="results-tip" id="results-tip" hidden></div>
             </div>
             <div class="results-legend" id="results-legend" aria-hidden="true"></div>
+            <p class="coverage-note" id="results-coverage" hidden></p>
             <p class="muted" id="results-caption"></p>
           </article>
           <article class="sampling-panel">
@@ -2717,6 +2726,13 @@
         }
       }
 
+      // Baselines this model was actually run with (any benchmark).
+      function modelBaselines(model) {
+        const data = window.QUICKSCOPE_BUDGET;
+        const methods = new Set(data.rows.filter((row) => row.model === model).map((row) => row.method));
+        return data.baselines.filter((method) => methods.has(method));
+      }
+
       function niceCeil(value) {
         if (value <= 0) return 1;
         const step = 10 ** Math.floor(Math.log10(value));
@@ -2731,10 +2747,18 @@
         document.getElementById("results-title").textContent = metric.title;
         document.getElementById("results-caption").textContent =
           `${metric.caption(tau)} Budgets are in model calls; the band spans the QuickScope variants, all evaluating ${resultsView.model}.`;
+        const present = modelBaselines(resultsView.model);
         document.getElementById("results-legend").innerHTML = [
           `<span><i class="band" style="background: var(--accent)"></i>QuickScope variants</span>`,
-          ...data.baselines.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
+          ...present.map((method) => `<span><i style="background: var(${BASELINE_STYLE[method].color})"></i>${BASELINE_STYLE[method].label}</span>`),
         ].join("");
+        const coverage = document.getElementById("results-coverage");
+        const missing = data.baselines.filter((method) => !present.includes(method));
+        coverage.hidden = !missing.length;
+        if (missing.length) {
+          const ran = present.map((method) => (method === "uniform" ? "uniform sampling" : BASELINE_STYLE[method].label));
+          coverage.textContent = `Running every baseline on an API model was beyond our budget, so ${resultsView.model} was run with QuickScope${ran.length ? ` and ${ran.join(", ")}` : ""} only. The full comparison is on the open-weight models.`;
+        }
         document.getElementById("model-select").value = resultsView.model;
         document.querySelectorAll("#bench-switch [data-bench]").forEach((button) => {
           button.setAttribute("aria-checked", String(button.dataset.bench === resultsView.bench));
@@ -2805,11 +2829,17 @@
       function initResults() {
         const data = window.QUICKSCOPE_BUDGET;
         if (!data) return;
-        resultsView.model = data.models[0];
+        // Open on a model with the full comparison, and group the list by how complete each one is.
+        const full = data.models.filter((model) => modelBaselines(model).length === data.baselines.length);
+        const partial = data.models.filter((model) => !full.includes(model));
+        resultsView.model = full[0] || data.models[0];
         resultsView.bench = Object.keys(data.benchmarks)[0];
         // A dropdown, not buttons: the list of models will keep growing.
         const modelSelect = document.getElementById("model-select");
-        modelSelect.innerHTML = data.models.map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
+        const options = (models) => models.map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
+        modelSelect.innerHTML = full.length && partial.length
+          ? `<optgroup label="All baselines">${options(full)}</optgroup><optgroup label="Fewer baselines">${options(partial)}</optgroup>`
+          : options(data.models);
         modelSelect.addEventListener("change", () => {
           resultsView.model = modelSelect.value;
           renderResults();
