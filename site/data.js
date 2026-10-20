@@ -89,6 +89,28 @@ window.QUICKSCOPE_PAGE = {
     ],
     instanceQuestion:
       "Here is a description of an arithmetic problem: The value of aae is 6. The value of aad is 2. aaf gets its value by adding together the value of aad and aae. The value of aag is 5. The value of aah is 5. aai gets its value by subtracting the value of aah from the value of aag. aaj gets its value by adding together the value of aaf and aai. Compute the result of aaj.",
+    // The same question, marked up with the setting that produced each part.
+    // data-p: type = dataset_type_id, ops = num_children_per_node, rng = seed; data-level = depth.
+    instanceMarkup:
+      'Here is a description of an <span data-p="type">arithmetic problem</span>: ' +
+      '<span class="sent" data-n="1">The value of <span data-level="3" data-p="rng">aae</span> is <span data-p="rng">6</span>.</span> ' +
+      '<span class="sent" data-n="2">The value of <span data-level="3" data-p="rng">aad</span> is <span data-p="rng">2</span>.</span> ' +
+      '<span class="sent" data-n="3"><span data-level="2" data-p="rng">aaf</span> gets its value by <span data-p="type rng">adding together</span> <span data-p="ops">the value of aad and aae</span>.</span> ' +
+      '<span class="sent" data-n="4">The value of <span data-level="3" data-p="rng">aag</span> is <span data-p="rng">5</span>.</span> ' +
+      '<span class="sent" data-n="5">The value of <span data-level="3" data-p="rng">aah</span> is <span data-p="rng">5</span>.</span> ' +
+      '<span class="sent" data-n="6"><span data-level="2" data-p="rng">aai</span> gets its value by <span data-p="type rng">subtracting</span> <span data-p="ops">the value of aah from the value of aag</span>.</span> ' +
+      '<span class="sent" data-n="7"><span data-level="1" data-p="rng">aaj</span> gets its value by <span data-p="type rng">adding together</span> <span data-p="ops">the value of aaf and aai</span>.</span> ' +
+      "Compute the result of aaj.",
+    paramNotes: {
+      default: "The highlighted <code>params</code> is where the configuration enters the generator. Point at a line of the configuration, or at <code>rng</code>, to see which part of the question it produced.",
+      dataset_type_id: "<code>dataset_type_id: 1</code> picks the task: an arithmetic problem built from additions and subtractions. Types 2–5 phrase the same kind of graph as linear equations or logic puzzles.",
+      depth: '<code>depth: 3</code> gives three levels of variables: the inputs <span class="level-key l3">aad, aae, aag, aah</span> feed <span class="level-key l2">aaf, aai</span>, which feed the answer <span class="level-key l1">aaj</span>. Each extra level adds another layer of steps.',
+      num_children_per_node: "<code>num_children_per_node: 2</code> means every step combines two variables. At 3 or 4, each step reads more inputs and the question grows quickly.",
+      extra_links_per_node: "<code>extra_links_per_node: 0</code> keeps the graph a tree, so nothing shows up here. At 1–3, steps also reuse variables from deeper levels.",
+      add_rand_desc: "<code>add_rand_desc: 0</code> adds no distractors, so nothing shows up here. At 1–3, irrelevant sentences such as “The value of abk is 4.” are mixed into the question.",
+      order_id: "<code>order_id: 1</code> writes the sentences in topological order: each variable is described before anything that uses it. Order 2 reverses the sentences and order 3 shuffles them.",
+      rng: "<code>rng</code> picks the names, the values and the operations. A new seed gives a fresh question with the same structure, which is why a configuration can be sampled again and again.",
+    },
     spaces: [
       { benchmark: "DyVal", size: "4,440 templates" },
       { benchmark: "STEER-ME", size: "303 templates" },
