@@ -126,6 +126,15 @@
         display: none !important;
       }
 
+      /* No rubber-band at the top and bottom. The x axis stays "auto" because "none" there also
+         turns off swipe-to-go-back in Chrome; clipping horizontal overflow means there is
+         nothing to bounce sideways. */
+      html,
+      body {
+        overscroll-behavior-y: none;
+        overflow-x: clip;
+      }
+
       body {
         margin: 0;
         background: var(--paper);
@@ -1671,6 +1680,7 @@
       }
 
       .found-stats .cert {
+        flex-basis: 100%;
         color: var(--accent-strong);
         font-family: var(--display-font), Poppins, ui-sans-serif, sans-serif;
         letter-spacing: 0.1em;
@@ -2035,9 +2045,9 @@
       <section aria-labelledby="explorer-title">
         <h2 id="explorer-title">Against the usual search methods.</h2>
         <p class="lead">
-          The same budgets on real benchmarks, with every method scored against held-out ground
-          truth: an estimate of each configuration's true error rate built from responses the
-          run itself never saw.
+          Real benchmarks, the same budgets for every method, and every method checked against
+          evidence it never saw: held-out responses, or fresh re-runs of the configurations
+          it found.
         </p>
         <p class="placeholder-flag" id="results-placeholder" hidden>
           Placeholder numbers, shaped like the paper's results. The real results replace them.
@@ -2724,21 +2734,15 @@
           caption: (tau) => `Configurations a method sampled at least 20 times whose observed and held-out error rates are both at least ${tau}.`,
           format: (v) => Math.round(v).toLocaleString(),
         },
-        topk_true: {
-          label: "Top 10 that hold up",
-          title: "Top 10 that are really hard",
-          caption: (tau) => `Of each method's ten hardest-looking configurations, how many really have an error rate of at least ${tau}.`,
-          format: (v) => `${Math.round(v)} / 10`,
-          range: () => [0, 10],
-        },
-        topk_gt_mean: {
-          label: "Error of top 10",
-          title: "True error rate of the top 10",
-          caption: () => "Held-out error rate of each method's ten hardest-looking configurations.",
+        reeval_topk: {
+          label: "Re-tested top K",
+          title: "Re-tested error of the top K",
+          caption: () => "Average error rate of each method's K hardest-looking configurations when re-run with fresh model calls.",
           format: (v) => v.toFixed(3),
-          // Zoom to the data: these rates bunch near the top, and a 0-1 axis would flatten them.
           range: (lo, hi) => [Math.max(0, Math.floor((lo - 0.01) * 20) / 20), Math.min(1, Math.ceil((hi + 0.005) * 20) / 20)],
           ticks: (v) => v.toFixed(2),
+          // Plotted against K, the number of top configurations, instead of the budget.
+          byK: true,
         },
       };
       const BASELINE_STYLE = {
@@ -2768,6 +2772,24 @@
       // Every series for the current model, benchmark and measure, visible or not.
       function resultSeries() {
         const data = window.QUICKSCOPE_BUDGET;
+        if (RESULT_METRICS[resultsView.metric].byK) {
+          const runs = data.reeval?.[resultsView.model]?.[resultsView.bench] || {};
+          const qs = Object.entries(runs).filter(([key]) => key !== "uniform");
+          const maxK = Math.max(0, ...Object.values(runs).map((run) => run.curve.length));
+          const ks = Array.from({ length: maxK }, (_, i) => i + 1);
+          const toPoints = (curve) => curve.map((value, i) => ({ budget: i + 1, value }));
+          const band = ks.map((k) => {
+            const values = qs.map(([, run]) => run.curve[k - 1]).filter((v) => v != null);
+            return values.length ? { budget: k, min: Math.min(...values), max: Math.max(...values) } : null;
+          }).filter(Boolean);
+          return {
+            budgets: ks,
+            band,
+            variants: qs.map(([key, run]) => ({ key, label: run.label, points: toPoints(run.curve) })),
+            lines: runs.uniform ? [{ key: "uniform", points: toPoints(runs.uniform.curve) }] : [],
+            tau: null,
+          };
+        }
         const rows = data.rows.filter((row) =>
           row.model === resultsView.model && row.benchmark === resultsView.bench && row[resultsView.metric] != null);
         const budgets = [...new Set(rows.map((row) => row.budget))].sort((a, b) => a - b);
@@ -2783,6 +2805,11 @@
       }
 
       const isShown = (key) => !resultsView.hidden.has(key);
+      // Budget results name variants by run (coup_cert); re-tested runs carry their own labels ("Cert 0.9").
+      const DASHES = [[], [6, 4], [2, 3], [9, 3, 2, 3]];
+      function variantStyle(key, index, label) {
+        return VARIANT_STYLE[key] || { label: label || key.replace(/^qs:/, ""), dash: DASHES[index % DASHES.length] };
+      }
       const seriesAlpha = (key) => (resultsView.focus && resultsView.focus !== key ? 0.18 : 1);
       // The band and the split variants share one legend key, so they highlight and hide together.
       const groupOf = (key) => (VARIANT_STYLE[key] ? "quickscope" : key);
@@ -2805,8 +2832,11 @@
         if (!budgets.length) return;
         const labelRoom = width > 560 ? 118 : 16;
         const area = { left: 44, right: width - labelRoom, top: 12, bottom: height - 30 };
-        const minX = Math.log10(budgets[0]);
-        const maxX = Math.log10(budgets[budgets.length - 1]);
+        const byK = Boolean(metric.byK);
+        // Budgets are spread on a log scale; K runs 1 to 100 on a linear one, as in the paper.
+        const xOf = byK ? (b) => b : (b) => Math.log10(b);
+        const minX = xOf(budgets[0]);
+        const maxX = xOf(budgets[budgets.length - 1]);
 
         // The y-axis fits whatever is visible, so hiding a series rescales the chart.
         const values = [
@@ -2816,7 +2846,7 @@
         const lo = values.length ? Math.min(...values) : 0;
         const hi = values.length ? Math.max(...values) : 1;
         const [minY, maxY] = metric.range ? metric.range(lo, hi) : [0, niceCeil(hi)];
-        const sx = (budget) => area.left + ((Math.log10(budget) - minX) / (maxX - minX || 1)) * (area.right - area.left);
+        const sx = (budget) => area.left + ((xOf(budget) - minX) / (maxX - minX || 1)) * (area.right - area.left);
         const sy = (value) => area.bottom - ((value - minY) / (maxY - minY || 1)) * (area.bottom - area.top);
         resultsView.area = { ...area, sx, sy, budgets };
 
@@ -2850,8 +2880,9 @@
         g.textAlign = "center";
         // Label from the right so the final budget always shows; skip any label that would collide.
         let nextLeft = Infinity;
-        [...budgets].reverse().forEach((budget) => {
-          const text = budget >= 1000 ? `${budget / 1000}k` : String(budget);
+        const tickBudgets = byK ? [1, 10, 25, 50, 75, 100].filter((k) => k <= budgets[budgets.length - 1]) : budgets;
+        [...tickBudgets].reverse().forEach((budget) => {
+          const text = !byK && budget >= 1000 ? `${budget / 1000}k` : String(budget);
           const half = g.measureText(text).width / 2;
           const x = sx(budget);
           if (x + half > nextLeft - 6) return;
@@ -2860,7 +2891,7 @@
         });
         if (width > 560) {
           g.textAlign = "right";
-          g.fillText("model calls", area.right, height - 2);
+          g.fillText(byK ? "top K configurations" : "model calls", area.right, height - 2);
         }
 
         const path = (points, key = "value") => {
@@ -2872,15 +2903,15 @@
         if (isShown("quickscope")) {
           g.globalAlpha = seriesAlpha("quickscope");
           if (resultsView.split) {
-            variants.forEach(({ key, points }) => {
+            variants.forEach(({ key, points }, index) => {
               g.strokeStyle = accentStrong;
               g.lineWidth = resultsView.focus === "quickscope" ? 2.5 : 2;
-              g.setLineDash(VARIANT_STYLE[key].dash);
+              g.setLineDash(variantStyle(key, index).dash);
               path(points);
               g.stroke();
               g.setLineDash([]);
               const last = points[points.length - 1];
-              ends.push({ y: sy(last.value), label: VARIANT_STYLE[key].label, color: accentStrong, key: "quickscope", bold: true });
+              ends.push({ y: sy(last.value), label: variantStyle(key, index, variants[index].label).label, color: accentStrong, key: "quickscope", bold: true });
             });
           } else if (band.length) {
             g.beginPath();
@@ -2911,11 +2942,13 @@
           g.lineWidth = resultsView.focus === key ? 2.5 : 1.5;
           path(points);
           g.stroke();
-          points.forEach((p) => {
-            g.beginPath();
-            g.rect(sx(p.budget) - 2.5, sy(p.value) - 2.5, 5, 5);
-            g.fill();
-          });
+          if (points.length <= 20) {
+            points.forEach((p) => {
+              g.beginPath();
+              g.rect(sx(p.budget) - 2.5, sy(p.value) - 2.5, 5, 5);
+              g.fill();
+            });
+          }
           g.globalAlpha = 1;
           const last = points[points.length - 1];
           ends.push({ y: sy(last.value), label: BASELINE_STYLE[key].label, color, key });
@@ -2948,11 +2981,19 @@
         }
       }
 
+      // Which measures exist for a model and benchmark: budget measures need comparison rows,
+      // the re-tested curve needs re-evaluation runs.
+      function metricAvailable(model, bench, key) {
+        const data = window.QUICKSCOPE_BUDGET;
+        if (RESULT_METRICS[key].byK) return Boolean(data.reeval?.[model]?.[bench]);
+        return data.rows.some((row) => row.model === model && row.benchmark === bench && row[key] != null);
+      }
+
       // Benchmarks this model has results for, in the file's order.
       function modelBenchmarks(model) {
         const data = window.QUICKSCOPE_BUDGET;
         const benches = new Set(data.rows.filter((row) => row.model === model).map((row) => row.benchmark));
-        Object.keys(data.found?.[model] || {}).forEach((bench) => benches.add(bench));
+        Object.keys(data.reeval?.[model] || {}).forEach((bench) => benches.add(bench));
         return Object.keys(data.benchmarks).filter((bench) => benches.has(bench));
       }
 
@@ -2972,15 +3013,25 @@
       function renderLegend() {
         const { lines } = resultSeries();
         const items = [
-          { key: "quickscope", label: resultsView.split ? "QuickScope: No cert, Cert, Adaptive cert" : "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' },
+          { key: "quickscope", label: resultsView.split ? `QuickScope: ${resultSeries().variants.map((v, i) => variantStyle(v.key, i, v.label).label).join(", ")}` : "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' },
           ...lines.map(({ key }) => ({ key, label: BASELINE_STYLE[key].label, swatch: `<i style="background: var(${BASELINE_STYLE[key].color})"></i>` })),
         ];
         document.getElementById("results-legend").innerHTML = items.map((item) =>
           `<button type="button" data-series="${item.key}" aria-pressed="${isShown(item.key)}">${item.swatch}${item.label}</button>`).join("");
       }
 
+      // Keep the chosen measure if this model and benchmark have it; otherwise fall back to one they do.
+      function settleMetric() {
+        const available = Object.keys(RESULT_METRICS).filter((key) => metricAvailable(resultsView.model, resultsView.bench, key));
+        if (available.length && !available.includes(resultsView.metric)) resultsView.metric = available[0];
+        document.querySelectorAll("#metric-switch [data-metric]").forEach((button) => {
+          button.hidden = !available.includes(button.dataset.metric);
+        });
+      }
+
       function renderResultsText() {
         const data = window.QUICKSCOPE_BUDGET;
+        settleMetric();
         const metric = RESULT_METRICS[resultsView.metric];
         const { tau } = resultSeries();
         document.getElementById("results-placeholder").hidden = !data.placeholder;
@@ -2996,7 +3047,8 @@
         });
         const coverage = document.getElementById("results-coverage");
         const missing = data.baselines.filter((method) => !present.includes(method));
-        coverage.hidden = !missing.length;
+        // Only budget measures compare against the baselines, so only they need the coverage note.
+        coverage.hidden = !missing.length || Boolean(metric.byK) || !present.length;
         if (missing.length) {
           const ran = present.map((method) => (method === "uniform" ? "uniform sampling" : BASELINE_STYLE[method].label));
           coverage.textContent = `Only QuickScope${ran.length ? ` and ${ran.join(", ")}` : ""} were run on this model; every baseline was beyond our budget for API models.`;
@@ -3290,9 +3342,9 @@
           const entries = [];
           if (isShown("quickscope")) {
             if (resultsView.split) {
-              variants.forEach(({ key, points }) => {
+              variants.forEach(({ key, label, points }, index) => {
                 const p = points.find((q) => q.budget === budget);
-                if (p) entries.push({ key: "quickscope", label: `QuickScope ${VARIANT_STYLE[key].label.toLowerCase()}`, value: metric.format(p.value), y: area.sy(p.value) });
+                if (p) entries.push({ key: "quickscope", label: `QuickScope ${variantStyle(key, index, label).label.toLowerCase()}`, value: metric.format(p.value), y: area.sy(p.value) });
               });
             } else {
               const p = band.find((q) => q.budget === budget);
@@ -3305,7 +3357,7 @@
           });
           const nearest = entries.reduce((best, e) => (!best || Math.abs(e.y - y) < Math.abs(best.y - y) ? e : best), null);
           resultsView.focus = nearest && Math.abs(nearest.y - y) < 28 ? nearest.key : null;
-          tip.innerHTML = `<strong>${budget.toLocaleString()} calls</strong>${entries.map((e) =>
+          tip.innerHTML = `<strong>${metric.byK ? `Top ${budget}` : `${budget.toLocaleString()} calls`}</strong>${entries.map((e) =>
             `<div class="${e.key === resultsView.focus ? "is-focus" : ""}"><span>${e.label}</span><span>${e.value}</span></div>`).join("")}`;
           tip.hidden = false;
           const left = area.sx(budget) + 12;

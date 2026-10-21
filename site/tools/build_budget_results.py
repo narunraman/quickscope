@@ -169,6 +169,9 @@ def main() -> None:
     source.add_argument("--placeholder", action="store_true", help="write made-up curves for layout")
     parser.add_argument("--runs", action="append", default=[], metavar="MODEL=RESULTS_ROOT",
                         help="a model's campaign results folder, for the list of configurations it found")
+    parser.add_argument("--reeval", type=Path,
+                        help="re-tested top-K curves: {model: {benchmark: {method: {label, curve}}}}, "
+                             "computed as in MA-eval's plot_reeval_comparison.py")
     parser.add_argument("--out", type=Path, default=OUT)
     args = parser.parse_args()
 
@@ -191,11 +194,15 @@ def main() -> None:
         charted = {r["benchmark"] for r in rows if r["model"] == model}
         if charted:
             found[model] = {bench: v for bench, v in found[model].items() if bench in charted}
+    reeval = json.loads(args.reeval.read_text()) if args.reeval else {}
+    reeval_benches = {bench for benches in reeval.values() for bench in benches}
     data = {
         "placeholder": bool(args.placeholder),
         "found": found,
-        "models": list(dict.fromkeys([*(r["model"] for r in rows), *found])),
-        "benchmarks": {k: v for k, v in BENCHMARKS.items() if any(r["benchmark"] == k for r in rows)},
+        "reeval": reeval,
+        "models": list(dict.fromkeys([*(r["model"] for r in rows), *found, *reeval])),
+        "benchmarks": {k: v for k, v in BENCHMARKS.items()
+                       if any(r["benchmark"] == k for r in rows) or k in reeval_benches},
         "quickscope": list(QUICKSCOPE),
         "baselines": [m for m in BASELINES if any(r["method"] == m for r in rows)],
         "rows": rows,
