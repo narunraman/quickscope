@@ -2731,7 +2731,7 @@
         naive_true: {
           label: "Hard found",
           title: "Hard configurations found",
-          caption: (tau) => `Configurations a method sampled at least 20 times whose observed and held-out error rates are both at least ${tau}.`,
+          caption: (tau, gt) => `Configurations a method sampled at least 20 times whose observed error rate and ${gt === "pooled" ? "error rate over all runs' responses" : "held-out error rate"} are both at least ${tau}.`,
           format: (v) => Math.round(v).toLocaleString(),
         },
         reeval_topk: {
@@ -2801,7 +2801,7 @@
         }).filter(Boolean);
         const variants = data.quickscope.map((method) => ({ key: method, points: pointsOf(method) })).filter((s) => s.points.length);
         const lines = data.baselines.map((method) => ({ key: method, points: pointsOf(method) })).filter((s) => s.points.length);
-        return { budgets, band, variants, lines, tau: rows[0]?.tau };
+        return { budgets, band, variants, lines, tau: rows[0]?.tau, gt: rows[0]?.gt };
       }
 
       const isShown = (key) => !resultsView.hidden.has(key);
@@ -3033,10 +3033,10 @@
         const data = window.QUICKSCOPE_BUDGET;
         settleMetric();
         const metric = RESULT_METRICS[resultsView.metric];
-        const { tau } = resultSeries();
+        const { tau, gt } = resultSeries();
         document.getElementById("results-placeholder").hidden = !data.placeholder;
         document.getElementById("results-title").textContent = metric.title;
-        document.getElementById("results-caption").textContent = metric.caption(tau);
+        document.getElementById("results-caption").textContent = metric.caption(tau, gt);
         renderLegend();
         const present = modelBaselines(resultsView.model);
         const benchNote = document.getElementById("results-bench-note");

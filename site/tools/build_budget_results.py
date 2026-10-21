@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Build site/assets/budget-results.js for the results section of the project page.
 
-Reads the compare_at_budget.csv written by MA-eval's scripts/compare_methods_at_budget.py
-(one row per benchmark x method x budget, scored against held-out ground truth) and keeps
-the columns the page draws. That script writes one file per model, so pass one --csv per
-model as MODEL=PATH; the page offers a switch between them.
+Reads the project-page bundle on the site-data branch of MA-eval (see its README.md):
 
-    python site/tools/build_budget_results.py \
-        --csv gpt-5.4-nano=out_nano/compare_at_budget.csv \
-        --csv gpt-5-mini=out_mini/compare_at_budget.csv
+    git -C MA-eval fetch origin site-data
+    git -C MA-eval archive origin/site-data | tar -x -C site-data
+    python site/tools/build_budget_results.py --site-data site-data \
+        --gt gpt-oss-120b/grid=pooled --skip gpt-oss-120b/dyval
 
-With --runs MODEL=RESULTS_ROOT (the <root>/<benchmark>/<method>/seed0/search_history.jsonl
-tree a campaign writes), it also lists the configurations each model's QuickScope run ranks
-hardest, for the "What a run hands you" list. Ranking and certification use COUP's KL lower
-bound (natural log, delta 0.01, pool = distinct configurations the run sampled).
+- comparisons/<model>/<benchmark>_<gt>.csv: one row per method x budget. Each model and
+  benchmark is scored against held-out ground truth unless --gt picks pooled.
+- found/<model>_<benchmark>.json: the configurations a QuickScope run ranks hardest (by KL
+  lower bound), with certification by the betting test, for the "What a run hands you" list.
 
-Without a results file, --placeholder writes made-up curves with the same shape so the
+--skip leaves a model and benchmark off the page.
+
+Without the bundle, --placeholder writes made-up curves with the same shape so the
 page can be laid out; the page labels them as placeholders.
 
     python site/tools/build_budget_results.py --placeholder
@@ -39,71 +39,33 @@ BASELINES = ("uniform", "successive_halving", "hyperband", "apt", "smac_ac")
 # naive_true is the paper's "hard configurations found": sampled at least --naive-min-n times
 # (20 in the paper) with empirical and held-out error rates both at least tau.
 METRICS = ("naive_true", "high_explored", "topk_true", "topk_gt_mean", "explored", "certified", "cert_true")
-# Configuration parameters per benchmark, as compare_methods_at_budget.py reads them.
-PARAMS = {
-    "dyval": ["dataset_type_id", "depth", "num_children_per_node", "extra_links_per_node", "add_rand_desc", "order_id"],
-    "steer_me": ["element", "type", "domain"],
-    "grid": ["grid_reasoning_task", "rows", "cols", "p_blocked", "num_islands", "island_size"],
-}
-# Which run to list configurations from: a certifying QuickScope run if there is one.
-FOUND_FROM = ("coup_cert", "coup_adaptive", "coup_cert_betting", "coup_nocert")
 TAUS = {"dyval": 0.9, "steer_me": 0.7, "grid": 0.9}
+# How many of a run's top configurations the page lists.
+FOUND_SHOWN = 6
 
 
-def kl(p: float, q: float) -> float:
-    if p == 0:
-        return math.log(1 / (1 - q))
-    if p == 1:
-        return math.log(1 / q)
-    return p * math.log(p / q) + (1 - p) * math.log((1 - p) / (1 - q))
+def param_value(value: str) -> int | float | str | None:
+    """The bundle writes parameters as strings; "None" and "nan" mark ones a task does not use."""
+    if value in ("None", "nan", ""):
+        return None
+    try:
+        x = float(value)
+    except ValueError:
+        return value
+    return int(x) if x.is_integer() else x
 
 
-def kl_lcb(mean: float, n: int, n_pool: int, delta: float = 0.01) -> float:
-    """COUP's lower bound (ma_eval/optimization/bounds.py: coup_bounds, natural-log KL)."""
-    if mean <= 1e-8:
-        return 0.0
-    a = math.log(26.71 * n_pool**2 * n**2 / delta) / n
-    eps, steps = 1e-8, 1000
-    for i in range(steps):
-        q = eps + (mean - eps) * i / (steps - 1)
-        if kl(mean, q) <= a:
-            return q
-    return mean
-
-
-def found_configs(root: Path, k: int = 6) -> dict:
-    """{benchmark: {method, tau, configs}} for the QuickScope run in each benchmark folder."""
-    out = {}
-    for bench, params in PARAMS.items():
-        run = next((root / bench / m / "seed0" / "search_history.jsonl" for m in FOUND_FROM
-                    if (root / bench / m / "seed0" / "search_history.jsonl").exists()), None)
-        if run is None:
-            continue
-        stats: dict[tuple, list[float]] = {}
-        with run.open() as f:
-            for line in f:
-                row = json.loads(line)
-                if not row.get("observed") or row.get("utility") is None:
-                    continue
-                key = tuple(row.get(p) for p in params)
-                s = stats.setdefault(key, [0.0, 0])
-                s[0] += float(row["utility"])
-                s[1] += 1
-        n_pool = max(len(stats), 1)
-        tau = TAUS[bench]
-        # LCB never exceeds the mean, so scan by mean and stop once no mean can beat the k-th LCB.
-        best: list[dict] = []
-        for key, (total, n) in sorted(stats.items(), key=lambda kv: -kv[1][0] / kv[1][1]):
-            mean = total / n
-            if len(best) >= k and mean < best[-1]["lcb"]:
-                break
-            lcb = kl_lcb(mean, n, n_pool)
-            best.append({"params": dict(zip(params, key)), "mean": round(mean, 4), "lcb": round(lcb, 4),
-                         "n": n, "certified": lcb >= tau})
-            best.sort(key=lambda c: -c["lcb"])
-            best = best[:k]
-        out[bench] = {"method": run.parent.parent.name, "tau": tau, "configs": best}
-    return out
+def found_configs(path: Path) -> dict:
+    """{method, tau, certified, configs} from a found/<model>_<benchmark>.json."""
+    run = json.loads(path.read_text())
+    configs = [{
+        "params": {k: v for k, v in ((k, param_value(v)) for k, v in c["params"].items()) if v is not None},
+        "mean": c["error_rate"],
+        "lcb": c["lower_bound"],
+        "n": c["samples"],
+        "certified": bool(c["betting_certified"]),
+    } for c in run["top"][:FOUND_SHOWN]]
+    return {"method": run["method"], "tau": run["tau"], "certified": run["betting_certified"], "configs": configs}
 
 
 def number(value: str) -> float | None:
@@ -126,6 +88,7 @@ def from_csv(model: str, path: Path) -> list[dict]:
                 "method": row["method"],
                 "budget": int(float(row["budget"])),
                 "tau": number(row["tau"]),
+                "gt": row.get("gt"),
                 **{m: number(row.get(m)) for m in METRICS},
             })
     return rows
@@ -164,36 +127,41 @@ def placeholder() -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument("--csv", action="append", metavar="MODEL=PATH",
-                        help="a model's compare_at_budget.csv from compare_methods_at_budget.py; repeat per model")
+    source.add_argument("--site-data", type=Path, help="a checkout of MA-eval's site-data branch")
     source.add_argument("--placeholder", action="store_true", help="write made-up curves for layout")
-    parser.add_argument("--runs", action="append", default=[], metavar="MODEL=RESULTS_ROOT",
-                        help="a model's campaign results folder, for the list of configurations it found")
+    parser.add_argument("--gt", action="append", default=[], metavar="MODEL/BENCHMARK=pooled",
+                        help="score this model and benchmark against pooled ground truth (default held-out)")
+    parser.add_argument("--skip", action="append", default=[], metavar="MODEL/BENCHMARK",
+                        help="leave this model and benchmark off the page")
     parser.add_argument("--reeval", type=Path,
                         help="re-tested top-K curves: {model: {benchmark: {method: {label, curve}}}}, "
                              "computed as in MA-eval's plot_reeval_comparison.py")
     parser.add_argument("--out", type=Path, default=OUT)
     args = parser.parse_args()
 
+    gt = {}
+    for spec in args.gt:
+        key, sep, value = spec.partition("=")
+        if not sep or value not in ("heldout", "pooled"):
+            parser.error(f"--gt takes MODEL/BENCHMARK=heldout|pooled, got {spec!r}")
+        gt[key] = value
+    skip = set(args.skip)
+
+    rows, found = [], {}
     if args.placeholder:
         rows = placeholder()
     else:
-        rows = []
-        for spec in args.csv:
-            model, sep, path = spec.partition("=")
-            if not sep:
-                parser.error(f"--csv takes MODEL=PATH, got {spec!r}")
-            rows += from_csv(model, Path(path))
-    found = {}
-    for spec in args.runs:
-        model, sep, root = spec.partition("=")
-        if not sep:
-            parser.error(f"--runs takes MODEL=RESULTS_ROOT, got {spec!r}")
-        found[model] = found_configs(Path(root))
-        # Keep only the benchmarks this model is charted on, when it has chart rows at all.
-        charted = {r["benchmark"] for r in rows if r["model"] == model}
-        if charted:
-            found[model] = {bench: v for bench, v in found[model].items() if bench in charted}
+        for model_dir in sorted((args.site_data / "comparisons").iterdir()):
+            model = model_dir.name
+            for bench in BENCHMARKS:
+                key = f"{model}/{bench}"
+                path = model_dir / f"{bench}_{gt.get(key, 'heldout')}.csv"
+                if key in skip or not path.exists():
+                    continue
+                rows += from_csv(model, path)
+                found_path = args.site_data / "found" / f"{model}_{bench}.json"
+                if found_path.exists():
+                    found.setdefault(model, {})[bench] = found_configs(found_path)
     reeval = json.loads(args.reeval.read_text()) if args.reeval else {}
     reeval_benches = {bench for benches in reeval.values() for bench in benches}
     data = {
