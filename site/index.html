@@ -3089,7 +3089,7 @@
             DYVAL_TYPES[p.dataset_type_id - 1] || `type ${p.dataset_type_id}`,
             `depth ${p.depth}`,
             `${p.num_children_per_node} children`,
-            p.extra_links_per_node ? `${p.extra_links_per_node} extra links` : null,
+            p.extra_links_per_node ? `${p.extra_links_per_node} extra link${p.extra_links_per_node === 1 ? "" : "s"}` : null,
             p.add_rand_desc ? `${p.add_rand_desc} distractor${p.add_rand_desc === 1 ? "" : "s"}` : null,
             DYVAL_ORDERS[p.order_id - 1],
           ].filter(Boolean).join(" · ");
@@ -3111,7 +3111,6 @@
             <span class="found-name">${escapeHtml(name)}</span>
             <span class="found-stats">
               <span>${(config.mean * 100).toFixed(1)}% error</span>
-              <span>lower bound ${(config.lcb * 100).toFixed(1)}%</span>
               <span>${config.n.toLocaleString()} call${config.n === 1 ? "" : "s"}</span>
               ${certified ? '<span class="cert">Certified</span>' : ""}
             </span>
@@ -3125,10 +3124,10 @@
         const found = window.QUICKSCOPE_BUDGET.found?.[resultsView.model]?.[resultsView.bench];
         if (found?.configs.length) {
           const certifiedCount = found.configs.filter((config) => config.certified).length;
-          intro.textContent = `Ranked by the lower bound on their error rate. `
+          intro.textContent = `The hardest configurations a QuickScope run found on ${benchName} for ${resultsView.model}. `
             + (certifiedCount
-              ? `${certifiedCount} cleared the ${found.tau} threshold and ${certifiedCount === 1 ? "is" : "are"} certified.`
-              : `None cleared the ${found.tau} certification threshold.`);
+              ? `${certifiedCount} ${certifiedCount === 1 ? "is" : "are"} certified to have an error rate of at least ${found.tau}.`
+              : `None is certified at ${found.tau}.`);
           list.innerHTML = found.configs.map((config) => foundItem(describeParams(resultsView.bench, config.params), config, config.certified)).join("");
           return;
         }
