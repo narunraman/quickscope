@@ -1638,6 +1638,24 @@
         width: 1.1rem;
       }
 
+      .results-legend svg.dash {
+        height: 4px;
+        overflow: visible;
+        width: 1.1rem;
+      }
+
+      .results-legend svg.dash line {
+        stroke: var(--accent-strong);
+        stroke-width: 2;
+      }
+
+      .results-legend .variant {
+        align-items: center;
+        display: inline-flex;
+        gap: 0.3rem;
+        margin-left: 0.5rem;
+      }
+
       .results-legend i.band {
         height: 0.6rem;
         opacity: 0.45;
@@ -3025,9 +3043,15 @@
       }
 
       function renderLegend() {
-        const { lines } = resultSeries();
+        const { lines, variants } = resultSeries();
+        // Split, each variant gets a line swatch in its own dash; together they stay one button,
+        // since the variants hide and highlight as a group.
+        const dashSwatch = (dash) => `<svg class="dash" viewBox="0 0 18 4" aria-hidden="true"><line x1="0" y1="2" x2="18" y2="2" stroke-dasharray="${dash.join(" ")}" /></svg>`;
+        const quickscope = resultsView.split
+          ? { label: `QuickScope: ${variants.map((v, i) => { const style = variantStyle(v.key, i, v.label); return `<span class="variant">${dashSwatch(style.dash)}${escapeHtml(style.label)}</span>`; }).join("")}`, swatch: "" }
+          : { label: "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' };
         const items = [
-          { key: "quickscope", label: resultsView.split ? `QuickScope: ${resultSeries().variants.map((v, i) => variantStyle(v.key, i, v.label).label).join(", ")}` : "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' },
+          { key: "quickscope", ...quickscope },
           ...lines.map(({ key }) => ({ key, label: BASELINE_STYLE[key].label, swatch: `<i style="background: var(${BASELINE_STYLE[key].color})"></i>` })),
         ];
         document.getElementById("results-legend").innerHTML = items.map((item) =>
