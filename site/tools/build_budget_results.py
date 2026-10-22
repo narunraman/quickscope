@@ -13,7 +13,8 @@ Reads the project-page bundle on the site-data branch of MA-eval (see its README
 - found/<model>_<benchmark>.json: the configurations a QuickScope run ranks hardest (by KL
   lower bound), with certification by the betting test, for the "What a run hands you" list.
 
---skip leaves a model and benchmark off the page; --max-budget cuts one off at a budget.
+--skip leaves a model and benchmark off the page; --skip-chart drops only its budget chart
+(keeping its found list); --max-budget cuts one off at a budget.
 
 Without the bundle, --placeholder writes made-up curves with the same shape so the
 page can be laid out; the page labels them as placeholders.
@@ -133,6 +134,8 @@ def main() -> None:
                         help="score this model and benchmark against pooled ground truth (default held-out)")
     parser.add_argument("--skip", action="append", default=[], metavar="MODEL/BENCHMARK",
                         help="leave this model and benchmark off the page")
+    parser.add_argument("--skip-chart", action="append", default=[], metavar="MODEL/BENCHMARK",
+                        help="drop this model and benchmark's budget chart but keep its found list")
     parser.add_argument("--max-budget", action="append", default=[], metavar="MODEL/BENCHMARK=CALLS",
                         help="drop budgets above CALLS for this model and benchmark")
     parser.add_argument("--reeval", type=Path,
@@ -167,7 +170,8 @@ def main() -> None:
                 if key in skip or not path.exists():
                     continue
                 cap = max_budget.get(key)
-                rows += [r for r in from_csv(model, path) if cap is None or r["budget"] <= cap]
+                if key not in args.skip_chart:
+                    rows += [r for r in from_csv(model, path) if cap is None or r["budget"] <= cap]
                 found_path = args.site_data / "found" / f"{model}_{bench}.json"
                 if found_path.exists():
                     found.setdefault(model, {})[bench] = found_configs(found_path)
