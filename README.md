@@ -1,4 +1,9 @@
-# QuickScope
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/wordmark-dark.png" />
+    <img alt="QuickScope" src=".github/assets/wordmark-light.png" height="64" />
+  </picture>
+</h1>
 
 **Bayesian-optimal evaluation for dynamic LLM benchmarks.**
 
