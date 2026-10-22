@@ -3,20 +3,18 @@
   <img src=".github/assets/wordmark-dark.png#gh-dark-mode-only" alt="QuickScope" height="64">
 </h1>
 
-**Bayesian-optimal evaluation for dynamic LLM benchmarks.**
+QuickScope finds where a language model fails reliably on a dynamic benchmark: the configurations of a
+question generator whose questions the model keeps getting wrong. Built on
+<a href="https://arxiv.org/abs/2510.14683"><img src=".github/assets/arxiv_logo.svg" height="14" alt=""></a> <a href="https://arxiv.org/abs/2510.14683">COUP</a>, it spends model calls
+adaptively, concentrating them on configurations that look hard, and certifies a configuration as hard with a
+confidence bound rather than reporting one-off failures. You decide what counts as hard by choosing a utility
+(error rate, complexity-weighted error, or your own). The method and results are on the
+<a href="https://quickscope.narunraman.com"><img src=".github/assets/quickscope_mark_light.svg#gh-light-mode-only" height="14" alt=""><img src=".github/assets/quickscope_mark_dark.svg#gh-dark-mode-only" height="14" alt=""></a> <a href="https://quickscope.narunraman.com">project page</a>
+and in the paper, <a href="https://arxiv.org/abs/2604.17842"><img src=".github/assets/arxiv_logo.svg" height="14" alt=""></a> <a href="https://arxiv.org/abs/2604.17842">arXiv:2604.17842</a>.
 
-QuickScope quickly scopes out a model's weak spots within a benchmark's configuration space. It uses [COUP](https://arxiv.org/abs/2501.06693), a Bayesian optimization algorithm, to adaptively allocate evaluation budget toward the most informative regions—certifying which questions are *reliably* hard rather than surfacing one-off failures from noisy outcomes.
+## Run it
 
-## Key ideas
-
-- **Adaptive search.** Instead of evaluating every configuration uniformly, QuickScope concentrates samples where uncertainty is highest, finding hard questions with fewer model calls.
-- **Certification.** Confidence bounds let you certify that a configuration is truly difficult, not just an artifact of small-sample noise.
-- **Pluggable utilities.** Swap in different utility functions to target different notions of "hard": low accuracy, complexity-weighted error, etc.
-- **Benchmark-agnostic.** Bring your own generator, search space, and scoring logic. QuickScope handles the optimization.
-
-## Installation
-
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
+QuickScope runs from a clone of this repository. You need Python 3.10+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/narunraman/quickscope.git
@@ -24,94 +22,59 @@ cd quickscope
 make sync
 ```
 
-The installed CLI is `qscope`; `quickscope` is kept as a longer alias.
-
-## Quickstart
-
-### Adaptive search (default)
-
-Find the hardest DyVal configurations for a model using COUP:
+The CLI is `qscope` (`quickscope` also works). Models are called through OpenAI or Anthropic, so set
+`OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in your environment first; `qscope list models` shows the model names it
+knows. Then search for the hardest
+<a href="https://arxiv.org/abs/2309.17167"><img src=".github/assets/arxiv_logo.svg" height="14" alt=""></a> <a href="https://arxiv.org/abs/2309.17167">DyVal</a>
+configurations for a model:
 
 ```bash
 qscope dyval --utility error-rate --model gpt-5.4-nano --batch-size 50 --n-batches 1000
 ```
 
-### Fixed-budget evaluation
-
-Evaluate all configurations uniformly:
-
-```bash
-qscope dyval --model gpt-5.4-nano --optimizer uniform --batch-size 50 --n-batches 1000
-```
-
-### Offline datasets
-
-Run on a pre-built dataset like STEER-ME:
+Fixed datasets run the same way. For
+<a href="https://steer-benchmark.cs.ubc.ca"><img src=".github/assets/steer_badge.svg" height="14" alt=""></a> <a href="https://steer-benchmark.cs.ubc.ca">STEER-ME</a>,
+download it once and run:
 
 ```bash
-# Download and prepare the dataset first
 qscope download steer_me
-
-# Then run
 qscope offline --scenario steer_me --utility error-rate --model gpt-5.4-nano --batch-size 50 --n-batches 1000
 ```
 
-## CLI reference
+## Commands
 
-| Command | Description |
+| Command | What it does |
 |---|---|
 | `qscope dyval` | DyVal dynamic reasoning benchmark |
-| `qscope offline` | Fixed datasets (STEER-ME, custom) |
-| `qscope rg` | [Reasoning Gym](https://github.com/open-thought/reasoning-gym) tasks |
-| `qscope results summary` | Summarize saved `results_*.json` artifacts |
+| `qscope offline` | Fixed datasets (STEER-ME, or your own) |
+| `qscope rg` | <a href="https://github.com/open-thought/reasoning-gym#gh-light-mode-only"><img src=".github/assets/github_logo_light.svg" height="14" alt=""></a><a href="https://github.com/open-thought/reasoning-gym#gh-dark-mode-only"><img src=".github/assets/github_logo_dark.svg" height="14" alt=""></a> [Reasoning Gym](https://github.com/open-thought/reasoning-gym) tasks |
+| `qscope results summary` | Summarize saved `results_*.json` files |
 | `qscope results top-configs` | Show the strongest configurations from saved results |
-| `qscope plot utility` | Plot top configurations by mean utility |
+| `qscope plot utility` | Plot the top configurations by mean utility (a PNG, plus a terminal plot unless `--no-terminal`) |
 | `qscope download` | Download and prepare datasets |
-| `qscope list models` | List available OpenAI/Anthropic model aliases |
-| `qscope list utilities` | List available utility functions |
-| `qscope list scenarios` | List available scenarios |
+| `qscope list models` / `utilities` / `scenarios` | List what is available |
 
-The plot command reads current `results_*.json` artifacts and saves a PNG file. It also renders a compact terminal plot by default; pass `--no-terminal` when generating files in batch jobs. It only uses the data produced by a normal QuickScope run.
+The benchmark commands take `--optimizer`: `coup` (the default; adaptive search, needs `--utility`), `uniform`
+(the same budget spread evenly over configurations), or `specified` (only the configurations given with
+`--configs`).
 
 ```bash
 qscope plot utility results/dyval_invac_cert90 --top-k 25
 ```
 
-### Optimizer modes
+## Add a benchmark
 
-The `--optimizer` flag controls the evaluation strategy:
+QuickScope keeps three things separate, and you can swap each one:
 
-| Mode | Description |
-|---|---|
-| `coup` (default) | Adaptive Bayesian search via COUP. Requires `--utility`. |
-| `uniform` | Uniform random evaluation across all configurations. |
-| `specified` | Evaluate a specific set of configurations via `--configs`. |
+1. **Utility**: maps a batch of answers to a number between 0 and 1.
+2. **Search space**: the parameters that identify a configuration.
+3. **Generator**: turns a configuration into a concrete question.
 
-## Project structure
+[`quickscope/simulation/README.md`](quickscope/simulation/README.md) walks through adding a scenario.
 
-```
-quickscope/
-├── quickscope/           # Core library
-│   ├── cli.py            # CLI entry point
-│   ├── adapters/         # LLM provider adapters (OpenAI, Anthropic)
-│   ├── dataflow/         # Utilities, transforms, caching, search space loading
-│   ├── optimization/     # COUP integration and fixed-budget evaluators
-│   └── simulation/       # Scenario generators (DyVal, reasoning_gym, offline, …)
-├── resources/
-│   ├── model_configs.yaml # Model registry
-│   └── search_spaces/    # Per-scenario search space definitions and utilities
-└── tests/
-```
+## License
 
-## Extending QuickScope
-
-QuickScope separates three concerns that you can swap independently:
-
-1. **Utility function** — maps evaluation metrics to a scalar in [0, 1].
-2. **Search space** — defines which parameters constitute a template identifier.
-3. **Generator** — maps a template identifier to a concrete question instance.
-
-See [`quickscope/simulation/README.md`](quickscope/simulation/README.md) for a guide on adding new scenarios.
+[MIT](LICENSE).
 
 ## Citation
 
@@ -119,16 +82,12 @@ If you use QuickScope in your research, please cite:
 
 ```bibtex
 @misc{lundy2026quickscope,
-      title={QuickScope: Certifying Hard Questions in Dynamic LLM Benchmarks}, 
+      title={QuickScope: Certifying Hard Questions in Dynamic LLM Benchmarks},
       author={Taylor Lundy and Narun K. Raman and Kevin Leyton-Brown},
       year={2026},
       eprint={2604.17842},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2604.17842}, 
+      url={https://arxiv.org/abs/2604.17842},
 }
 ```
-
-## License
-
-[MIT](LICENSE)
