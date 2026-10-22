@@ -1,8 +1,6 @@
 <h1>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/wordmark-dark.png" />
-    <img alt="QuickScope" src=".github/assets/wordmark-light.png" height="64" />
-  </picture>
+  <img src=".github/assets/wordmark-light.png#gh-light-mode-only" alt="QuickScope" height="64">
+  <img src=".github/assets/wordmark-dark.png#gh-dark-mode-only" alt="QuickScope" height="64">
 </h1>
 
 **Bayesian-optimal evaluation for dynamic LLM benchmarks.**
