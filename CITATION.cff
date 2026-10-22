@@ -3,6 +3,7 @@ message: "If you use QuickScope, please cite the QuickScope paper."
 title: "QuickScope: certifying hard questions in dynamic LLM benchmarks"
 abstract: "QuickScope finds where a language model fails reliably on a dynamic benchmark: the configurations of a question generator whose questions the model keeps getting wrong. Built on COUP, it spends model calls adaptively and certifies a configuration as hard with a confidence bound."
 type: software
+doi: "10.5281/zenodo.23573835"
 license: MIT
 repository-code: "https://github.com/narunraman/quickscope"
 url: "https://quickscope.narunraman.com"

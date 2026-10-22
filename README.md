@@ -3,6 +3,8 @@
   <img src=".github/assets/wordmark-dark.png#gh-dark-mode-only" alt="QuickScope" height="64">
 </h1>
 
+[![DOI](https://zenodo.org/badge/1201657296.svg)](https://doi.org/10.5281/zenodo.23573835)
+
 QuickScope finds where a language model fails reliably on a dynamic benchmark: the configurations of a
 question generator whose questions the model keeps getting wrong. Built on
 <a href="https://arxiv.org/abs/2510.14683"><img src=".github/assets/arxiv_logo.svg" height="14" alt=""></a> <a href="https://arxiv.org/abs/2510.14683">COUP</a>, it spends model calls
@@ -89,5 +91,17 @@ If you use QuickScope in your research, please cite:
       archivePrefix={arXiv},
       primaryClass={cs.CL},
       url={https://arxiv.org/abs/2604.17842},
+}
+```
+
+To cite the QuickScope software itself (this DOI always points to the latest release; each release on [Zenodo](https://doi.org/10.5281/zenodo.23573835) has its own):
+
+```bibtex
+@software{lundy_quickscope,
+  author    = {Lundy, Taylor and Raman, Narun Krishnamurthi and Leyton-Brown, Kevin},
+  title     = {{QuickScope: certifying hard questions in dynamic LLM benchmarks}},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.23573835},
+  url       = {https://doi.org/10.5281/zenodo.23573835}
 }
 ```
