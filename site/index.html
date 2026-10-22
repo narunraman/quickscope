@@ -1649,11 +1649,11 @@
         stroke-width: 2;
       }
 
-      .results-legend .variant {
-        align-items: center;
-        display: inline-flex;
-        gap: 0.3rem;
-        margin-left: 0.5rem;
+      .results-legend .legend-group {
+        align-self: center;
+        color: var(--muted);
+        font-size: 0.74rem;
+        padding-left: 0.35rem;
       }
 
       .results-legend i.band {
@@ -2843,8 +2843,8 @@
         return VARIANT_STYLE[key] || { label: label || key.replace(/^qs:/, ""), dash: DASHES[index % DASHES.length] };
       }
       const seriesAlpha = (key) => (resultsView.focus && resultsView.focus !== key ? 0.18 : 1);
-      // The band and the split variants share one legend key, so they highlight and hide together.
-      const groupOf = (key) => (VARIANT_STYLE[key] ? "quickscope" : key);
+      // The band is one series ("quickscope"); split, each variant is its own series and hides on its own.
+      const variantSeries = (key) => `variant:${key}`;
 
       function drawResults() {
         const canvas = document.getElementById("results-chart");
@@ -2872,7 +2872,9 @@
 
         // The y-axis fits whatever is visible, so hiding a series rescales the chart.
         const values = [
-          ...(isShown("quickscope") ? (resultsView.split ? variants.flatMap((s) => s.points.map((p) => p.value)) : band.flatMap((p) => [p.min, p.max])) : []),
+          ...(resultsView.split
+            ? variants.filter((s) => isShown(variantSeries(s.key))).flatMap((s) => s.points.map((p) => p.value))
+            : isShown("quickscope") ? band.flatMap((p) => [p.min, p.max]) : []),
           ...lines.filter((s) => isShown(s.key)).flatMap((s) => s.points.map((p) => p.value)),
         ];
         const lo = values.length ? Math.min(...values) : 0;
@@ -2932,20 +2934,24 @@
         };
         const ends = [];
 
-        if (isShown("quickscope")) {
+        if (resultsView.split) {
+          variants.forEach(({ key, label, points }, index) => {
+            const series = variantSeries(key);
+            if (!isShown(series)) return;
+            g.globalAlpha = seriesAlpha(series);
+            g.strokeStyle = accentStrong;
+            g.lineWidth = resultsView.focus === series ? 2.5 : 2;
+            g.setLineDash(variantStyle(key, index).dash);
+            path(points);
+            g.stroke();
+            g.setLineDash([]);
+            const last = points[points.length - 1];
+            ends.push({ y: sy(last.value), label: variantStyle(key, index, label).label, color: accentStrong, key: series, bold: true });
+          });
+          g.globalAlpha = 1;
+        } else if (isShown("quickscope")) {
           g.globalAlpha = seriesAlpha("quickscope");
-          if (resultsView.split) {
-            variants.forEach(({ key, points }, index) => {
-              g.strokeStyle = accentStrong;
-              g.lineWidth = resultsView.focus === "quickscope" ? 2.5 : 2;
-              g.setLineDash(variantStyle(key, index).dash);
-              path(points);
-              g.stroke();
-              g.setLineDash([]);
-              const last = points[points.length - 1];
-              ends.push({ y: sy(last.value), label: variantStyle(key, index, variants[index].label).label, color: accentStrong, key: "quickscope", bold: true });
-            });
-          } else if (band.length) {
+          if (band.length) {
             g.beginPath();
             band.forEach((p, i) => (i ? g.lineTo(sx(p.budget), sy(p.max)) : g.moveTo(sx(p.budget), sy(p.max))));
             [...band].reverse().forEach((p) => g.lineTo(sx(p.budget), sy(p.min)));
@@ -3044,17 +3050,19 @@
 
       function renderLegend() {
         const { lines, variants } = resultSeries();
-        // Split, each variant gets a line swatch in its own dash; together they stay one button,
-        // since the variants hide and highlight as a group.
+        // Split, each variant is its own entry with a line swatch in its dash.
         const dashSwatch = (dash) => `<svg class="dash" viewBox="0 0 18 4" aria-hidden="true"><line x1="0" y1="2" x2="18" y2="2" stroke-dasharray="${dash.join(" ")}" /></svg>`;
         const quickscope = resultsView.split
-          ? { label: `QuickScope: ${variants.map((v, i) => { const style = variantStyle(v.key, i, v.label); return `<span class="variant">${dashSwatch(style.dash)}${escapeHtml(style.label)}</span>`; }).join("")}`, swatch: "" }
-          : { label: "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' };
+          ? variants.map((v, i) => {
+            const style = variantStyle(v.key, i, v.label);
+            return { key: variantSeries(v.key), label: escapeHtml(style.label), swatch: dashSwatch(style.dash) };
+          })
+          : [{ key: "quickscope", label: "QuickScope variants", swatch: '<i class="band" style="background: var(--accent)"></i>' }];
         const items = [
-          { key: "quickscope", ...quickscope },
+          ...quickscope,
           ...lines.map(({ key }) => ({ key, label: BASELINE_STYLE[key].label, swatch: `<i style="background: var(${BASELINE_STYLE[key].color})"></i>` })),
         ];
-        document.getElementById("results-legend").innerHTML = items.map((item) =>
+        document.getElementById("results-legend").innerHTML = (resultsView.split ? '<span class="legend-group">QuickScope</span>' : "") + items.map((item) =>
           `<button type="button" data-series="${item.key}" aria-pressed="${isShown(item.key)}">${item.swatch}${item.label}</button>`).join("");
       }
 
@@ -3377,16 +3385,14 @@
           const metric = RESULT_METRICS[resultsView.metric];
           const { band, variants, lines } = resultSeries();
           const entries = [];
-          if (isShown("quickscope")) {
-            if (resultsView.split) {
-              variants.forEach(({ key, label, points }, index) => {
-                const p = points.find((q) => q.budget === budget);
-                if (p) entries.push({ key: "quickscope", label: `QuickScope ${variantStyle(key, index, label).label.toLowerCase()}`, value: metric.format(p.value), y: area.sy(p.value) });
-              });
-            } else {
-              const p = band.find((q) => q.budget === budget);
-              if (p) entries.push({ key: "quickscope", label: "QuickScope", value: `${metric.format(p.min)}–${metric.format(p.max)}`, y: area.sy((p.min + p.max) / 2) });
-            }
+          if (resultsView.split) {
+            variants.forEach(({ key, label, points }, index) => {
+              const p = points.find((q) => q.budget === budget);
+              if (p && isShown(variantSeries(key))) entries.push({ key: variantSeries(key), label: `QuickScope ${variantStyle(key, index, label).label.toLowerCase()}`, value: metric.format(p.value), y: area.sy(p.value) });
+            });
+          } else if (isShown("quickscope")) {
+            const p = band.find((q) => q.budget === budget);
+            if (p) entries.push({ key: "quickscope", label: "QuickScope", value: `${metric.format(p.min)}–${metric.format(p.max)}`, y: area.sy((p.min + p.max) / 2) });
           }
           lines.filter((s) => isShown(s.key)).forEach(({ key, points }) => {
             const p = points.find((q) => q.budget === budget);
