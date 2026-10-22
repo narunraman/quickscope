@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use QuickScope, please cite the QuickScope paper."
+title: "QuickScope: certifying hard questions in dynamic LLM benchmarks"
+abstract: "QuickScope finds where a language model fails reliably on a dynamic benchmark: the configurations of a question generator whose questions the model keeps getting wrong. Built on COUP, it spends model calls adaptively and certifies a configuration as hard with a confidence bound."
+type: software
+license: MIT
+repository-code: "https://github.com/narunraman/quickscope"
+url: "https://quickscope.narunraman.com"
+keywords:
+  - benchmark
+  - large language models
+  - evaluation
+  - algorithm configuration
+authors:
+  - family-names: Lundy
+    given-names: Taylor
+  - family-names: Raman
+    given-names: Narun Krishnamurthi
+  - family-names: Leyton-Brown
+    given-names: Kevin
+preferred-citation:
+  type: article
+  title: "QuickScope: Certifying Hard Questions in Dynamic LLM Benchmarks"
+  authors:
+    - family-names: Lundy
+      given-names: Taylor
+    - family-names: Raman
+      given-names: Narun Krishnamurthi
+    - family-names: Leyton-Brown
+      given-names: Kevin
+  year: 2026
+  journal: "arXiv preprint"
+  identifiers:
+    - type: other
+      value: "arXiv:2604.17842"
+  url: "https://arxiv.org/abs/2604.17842"

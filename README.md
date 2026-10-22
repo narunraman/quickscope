@@ -9,7 +9,7 @@ question generator whose questions the model keeps getting wrong. Built on
 adaptively, concentrating them on configurations that look hard, and certifies a configuration as hard with a
 confidence bound rather than reporting one-off failures. You decide what counts as hard by choosing a utility
 (error rate, complexity-weighted error, or your own). The method and results are on the
-<a href="https://quickscope.narunraman.com"><img src=".github/assets/quickscope_mark_light.svg#gh-light-mode-only" height="14" alt=""><img src=".github/assets/quickscope_mark_dark.svg#gh-dark-mode-only" height="14" alt=""></a> <a href="https://quickscope.narunraman.com">project page</a>
+<a href="https://quickscope.narunraman.com#gh-light-mode-only"><img src=".github/assets/quickscope_mark_light.svg" height="14" alt=""></a><a href="https://quickscope.narunraman.com#gh-dark-mode-only"><img src=".github/assets/quickscope_mark_dark.svg" height="14" alt=""></a> <a href="https://quickscope.narunraman.com">project page</a>
 and in the paper, <a href="https://arxiv.org/abs/2604.17842"><img src=".github/assets/arxiv_logo.svg" height="14" alt=""></a> <a href="https://arxiv.org/abs/2604.17842">arXiv:2604.17842</a>.
 
 ## Run it
